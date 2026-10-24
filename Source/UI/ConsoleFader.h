@@ -29,7 +29,8 @@ public:
     static juce::String formatDb (double db);
 
     static constexpr int scaleWidth = 22;
-    static constexpr int capHeight = 44;
+    static constexpr int capHeight = 54;
+    static constexpr int capWidth = 26;
 
 private:
     struct FaderLookAndFeel;

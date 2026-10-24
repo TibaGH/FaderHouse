@@ -7,10 +7,12 @@ static void save (const Image& img, const String& path)
 {
     File f (path); f.deleteFile(); FileOutputStream out (f); PNGImageFormat().writeImageToStream (img, out);
 }
+int previewMain (const String&);
 int main (int argc, char** argv)
 {
     ScopedJuceInitialiser_GUI init;
     const String dir = argc > 1 ? argv[1] : ".";
+    if (argc > 2) return previewMain (dir);
     for (int size : { 1024, 256, 64 })
     {
         Image img (Image::ARGB, size, size, true);

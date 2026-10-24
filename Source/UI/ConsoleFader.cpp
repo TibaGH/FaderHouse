@@ -73,39 +73,35 @@ struct ConsoleFader::FaderLookAndFeel final : public LookAndFeel_V4
             }
         }
 
-        // cap
-        const float capW = jmin (30.0f, (float) width - 6.0f);
-        auto cap = Rectangle<float> (capW, (float) capHeight).withCentre ({ cx, sliderPos });
+        // cap: tall and narrow like a real long-throw console cap (about 1 : 2.1)
+        auto cap = Rectangle<float> ((float) capWidth, (float) capHeight).withCentre ({ cx, sliderPos });
 
         g.setColour (Colours::black.withAlpha (0.45f));                      // drop shadow
-        g.fillRoundedRectangle (cap.translated (0.0f, 3.0f).expanded (1.0f), 4.0f);
+        g.fillRoundedRectangle (cap.translated (0.0f, 3.0f).expanded (1.0f), 3.5f);
 
-        // body + sloped faces, like a classic long-throw console cap seen from the front
-        g.setColour (Colour (0xff0b0b0c));
-        g.fillRoundedRectangle (cap, 4.0f);
+        g.setColour (Colour (0xff0a0a0b));
+        g.fillRoundedRectangle (cap, 3.5f);
 
-        auto upper = cap.reduced (2.0f).withHeight (cap.getHeight() * 0.40f);
-        g.setGradientFill (ColourGradient (Colour (0xff6a6c72), upper.getX(), upper.getY(),
-                                           Colour (0xff26272a), upper.getX(), upper.getBottom(), false));
-        g.fillRoundedRectangle (upper, 3.0f);
+        auto upper = cap.reduced (1.5f).withHeight (cap.getHeight() * 0.5f - 3.0f);
+        g.setGradientFill (ColourGradient (Colour (0xff707278), upper.getX(), upper.getY(),
+                                           Colour (0xff2a2b2e), upper.getX(), upper.getBottom(), false));
+        g.fillRoundedRectangle (upper, 2.5f);
 
-        auto lower = cap.reduced (2.0f);
-        lower = lower.withTop (lower.getBottom() - cap.getHeight() * 0.30f);
-        g.setGradientFill (ColourGradient (Colour (0xff1a1b1d), lower.getX(), lower.getY(),
-                                           Colour (0xff050506), lower.getX(), lower.getBottom(), false));
-        g.fillRoundedRectangle (lower, 3.0f);
-
-        // grip grooves
         g.setColour (Colours::black.withAlpha (0.5f));
-        for (float dy : { -16.0f, -12.5f, -9.0f })
-            g.fillRect (cap.getX() + 4.0f, cap.getCentreY() + dy, cap.getWidth() - 8.0f, 1.2f);
+        for (float dy = -cap.getHeight() * 0.5f + 6.0f; dy < -4.0f; dy += 3.5f)
+            g.fillRect (cap.getX() + 3.5f, cap.getCentreY() + dy, cap.getWidth() - 7.0f, 1.0f);
 
-        // white index line
-        g.setColour (Colour (0xfff6f5f0));
-        g.fillRect (cap.getX() + 1.5f, cap.getCentreY() - 1.0f, cap.getWidth() - 3.0f, 2.5f);
+        auto lower = cap.reduced (1.5f);
+        lower = lower.withTop (cap.getCentreY() + 2.5f);
+        g.setGradientFill (ColourGradient (Colour (0xff222326), lower.getX(), lower.getY(),
+                                           Colour (0xff060607), lower.getX(), lower.getBottom(), false));
+        g.fillRoundedRectangle (lower, 2.5f);
+
+        g.setColour (Colour (0xfff6f5f0));                                   // index line
+        g.fillRect (cap.getX() + 1.0f, cap.getCentreY() - 1.0f, cap.getWidth() - 2.0f, 2.5f);
 
         g.setColour (Colours::white.withAlpha (0.12f));
-        g.drawRoundedRectangle (cap.reduced (0.5f), 4.0f, 1.0f);
+        g.drawRoundedRectangle (cap.reduced (0.5f), 3.5f, 1.0f);
     }
 };
 
