@@ -80,24 +80,29 @@ struct ConsoleFader::FaderLookAndFeel final : public LookAndFeel_V4
         g.setColour (Colours::black.withAlpha (0.45f));                      // drop shadow
         g.fillRoundedRectangle (cap.translated (0.0f, 3.0f).expanded (1.0f), 4.0f);
 
-        ColourGradient body (Colour (0xff3a3b3e), cap.getX(), cap.getY(),
-                             Colour (0xff0d0d0f), cap.getX(), cap.getBottom(), false);
-        body.addColour (0.48, Colour (0xff1c1d20));
-        body.addColour (0.52, Colour (0xff2a2b2e));
-        g.setGradientFill (body);
+        // body + sloped faces, like a classic long-throw console cap seen from the front
+        g.setColour (Colour (0xff0b0b0c));
         g.fillRoundedRectangle (cap, 4.0f);
 
-        // grip ridges
-        g.setColour (Colours::black.withAlpha (0.55f));
-        for (float dy : { -15.0f, -10.0f, 10.0f, 15.0f })
-            g.fillRect (cap.getX() + 3.0f, cap.getCentreY() + dy, cap.getWidth() - 6.0f, 1.2f);
-        g.setColour (Colours::white.withAlpha (0.09f));
-        for (float dy : { -14.0f, -9.0f, 11.0f, 16.0f })
-            g.fillRect (cap.getX() + 3.0f, cap.getCentreY() + dy, cap.getWidth() - 6.0f, 1.0f);
+        auto upper = cap.reduced (2.0f).withHeight (cap.getHeight() * 0.40f);
+        g.setGradientFill (ColourGradient (Colour (0xff6a6c72), upper.getX(), upper.getY(),
+                                           Colour (0xff26272a), upper.getX(), upper.getBottom(), false));
+        g.fillRoundedRectangle (upper, 3.0f);
+
+        auto lower = cap.reduced (2.0f);
+        lower = lower.withTop (lower.getBottom() - cap.getHeight() * 0.30f);
+        g.setGradientFill (ColourGradient (Colour (0xff1a1b1d), lower.getX(), lower.getY(),
+                                           Colour (0xff050506), lower.getX(), lower.getBottom(), false));
+        g.fillRoundedRectangle (lower, 3.0f);
+
+        // grip grooves
+        g.setColour (Colours::black.withAlpha (0.5f));
+        for (float dy : { -16.0f, -12.5f, -9.0f })
+            g.fillRect (cap.getX() + 4.0f, cap.getCentreY() + dy, cap.getWidth() - 8.0f, 1.2f);
 
         // white index line
-        g.setColour (Colour (0xfff2f2ee));
-        g.fillRect (cap.getX() + 1.5f, cap.getCentreY() - 1.0f, cap.getWidth() - 3.0f, 2.0f);
+        g.setColour (Colour (0xfff6f5f0));
+        g.fillRect (cap.getX() + 1.5f, cap.getCentreY() - 1.0f, cap.getWidth() - 3.0f, 2.5f);
 
         g.setColour (Colours::white.withAlpha (0.12f));
         g.drawRoundedRectangle (cap.reduced (0.5f), 4.0f, 1.0f);

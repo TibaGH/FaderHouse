@@ -15,8 +15,8 @@ namespace Theme
     const juce::Colour app          { 0xff6aa7f0 };   // app channels
     const juce::Colour system       { 0xffa58cf0 };   // system channel
     const juce::Colour output       { 0xff52c7a6 };   // mixes
-    const juce::Colour mute         { 0xffe5484d };
-    const juce::Colour solo         { 0xfff2b84b };
+    const juce::Colour mute         { 0xffe5484d };   // lit MUTE (red)
+    const juce::Colour solo         { 0xff3ee07a };   // lit SOLO (green)
     const juce::Colour stripTop     { 0xff2a2c31 };
     const juce::Colour stripBottom  { 0xff1c1d21 };
     const juce::Colour meterLow     { 0xff3ccf7a };
