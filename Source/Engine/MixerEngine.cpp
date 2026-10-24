@@ -425,6 +425,28 @@ void MixerEngine::moveSource (Source* source, int delta)
     structureChanged();
 }
 
+void MixerEngine::moveSourceTo (Source* source, int newIndex)
+{
+    {
+        const GenericScopedLock<SpinLock> sl (stateLock);
+        auto it = std::find_if (sources.begin(), sources.end(), [source] (auto& s) { return s.get() == source; });
+        if (it == sources.end())
+            return;
+
+        const int from = (int) std::distance (sources.begin(), it);
+        const int to = jlimit (0, (int) sources.size() - 1, newIndex);
+        if (from == to)
+            return;
+
+        auto moved = std::move (sources[(size_t) from]);
+        sources.erase (sources.begin() + from);
+        sources.insert (sources.begin() + to, std::move (moved));
+    }
+
+    pushRoutes();
+    structureChanged();
+}
+
 Output* MixerEngine::addOutput (const String& name)
 {
     int slot = -1;

@@ -68,7 +68,8 @@ ChannelStrip::ChannelStrip (Source& s, MixerEngine& e, PluginWindowManager& wind
     nameLabel.setFont (FontOptions (14.0f, Font::bold));
     nameLabel.setJustificationType (Justification::centredLeft);
     nameLabel.setEditable (false, true, false);
-    nameLabel.setTooltip ("Double-click to rename");
+    nameLabel.setTooltip ("Drag to move the channel, double-click to rename");
+    nameLabel.addMouseListener (this, false);
     nameLabel.onTextChange = [this]
     {
         source.name = nameLabel.getText().trim().isEmpty() ? String ("Channel") : nameLabel.getText().trim();
@@ -468,6 +469,36 @@ void ChannelStrip::showAppPicker()
 }
 
 //==============================================================================
+void ChannelStrip::mouseDown (const MouseEvent&)
+{
+    dragActive = false;
+}
+
+void ChannelStrip::mouseDrag (const MouseEvent& e)
+{
+    if (! dragActive)
+    {
+        if (e.getDistanceFromDragStart() < 5)
+            return;
+        dragActive = true;
+        setMouseCursor (MouseCursor::DraggingHandCursor);
+        if (onDragStart) onDragStart (*this);
+    }
+
+    if (onDrag) onDrag (*this);
+}
+
+void ChannelStrip::mouseUp (const MouseEvent&)
+{
+    if (! dragActive)
+        return;
+
+    dragActive = false;
+    setMouseCursor (MouseCursor::NormalCursor);
+    if (onDragEnd) onDragEnd (*this);
+}
+
+//==============================================================================
 void ChannelStrip::paint (Graphics& g)
 {
     paintStripPanel (g, getLocalBounds().toFloat(), kindColour(), false);
@@ -514,12 +545,12 @@ void ChannelStrip::resized()
     badgeArea = area.removeFromBottom (28).reduced (2, 4);
     chainEditor.setBounds (area);
 
-    auto left = section.removeFromLeft (38);
-    muteButton.setBounds (left.removeFromTop (34 + ConsoleButton::labelHeight));
-    left.removeFromTop (6);
-    soloButton.setBounds (left.removeFromTop (34 + ConsoleButton::labelHeight));
+    auto left = section.removeFromLeft (ConsoleButton::preferredWidth);
+    muteButton.setBounds (left.removeFromTop (ConsoleButton::preferredHeight));
+    left.removeFromTop (2);
+    soloButton.setBounds (left.removeFromTop (ConsoleButton::preferredHeight));
     left.removeFromTop (10);
-    meter.setBounds (left.reduced (8, 0));
+    meter.setBounds (left.reduced (10, 0));
 
     fader.setBounds (section);
 }

@@ -112,6 +112,7 @@ public:
     Source* addSource (SourceKind kind, const juce::String& name);
     void removeSource (Source* source);
     void moveSource (Source* source, int delta);
+    void moveSourceTo (Source* source, int newIndex);
 
     Output* addOutput (const juce::String& name);   // nullptr when all slots are used
     void removeOutput (Output* output);

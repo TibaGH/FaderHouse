@@ -19,8 +19,8 @@ public:
 
     static constexpr int rowHeight = 22;
 
-    /** Smallest useful height: two slots plus the add button. */
-    static constexpr int minimumHeight = 6 + 3 * (rowHeight + 2);
+    /** Smallest useful height: one slot plus the add button (more slots scroll). */
+    static constexpr int minimumHeight = 6 + 2 * (rowHeight + 2);
 
 private:
     void showAddMenu();

@@ -156,10 +156,10 @@ void OutputStrip::resized()
     area.removeFromBottom (28);
     chainEditor.setBounds (area);
 
-    auto left = section.removeFromLeft (38);
-    muteButton.setBounds (left.removeFromTop (34 + ConsoleButton::labelHeight));
+    auto left = section.removeFromLeft (ConsoleButton::preferredWidth);
+    muteButton.setBounds (left.removeFromTop (ConsoleButton::preferredHeight));
     left.removeFromTop (10);
-    meter.setBounds (left.reduced (8, 0));
+    meter.setBounds (left.reduced (10, 0));
 
     fader.setBounds (section);
 }

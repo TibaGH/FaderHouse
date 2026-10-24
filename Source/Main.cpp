@@ -59,7 +59,9 @@ public:
             setContentOwned (new MainComponent (engine), true);
             setResizable (true, true);
             // Big enough that the faders always keep their full size (top bar + status bar + strip).
-            setResizeLimits (960, 48 + 26 + 16 + 10 + ChannelStrip::minimumHeight, 10000, 10000);
+            // (the frame difference covers a title bar, if the window size includes it)
+            const int frame = juce::jmax (0, getHeight() - getContentComponent()->getHeight());
+            setResizeLimits (960, MainComponent::getMinimumHeight() + frame, 10000, 10000);
             centreWithSize (getWidth(), getHeight());
             setVisible (true);
         }

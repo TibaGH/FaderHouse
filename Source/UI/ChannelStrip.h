@@ -24,6 +24,13 @@ public:
 
     std::function<void()> onScanRequested;
 
+    /** Dragging the strip by its header or panel reorders it (handled by the main component). */
+    std::function<void (ChannelStrip&)> onDragStart, onDrag, onDragEnd;
+
+    void mouseDown (const juce::MouseEvent&) override;
+    void mouseDrag (const juce::MouseEvent&) override;
+    void mouseUp (const juce::MouseEvent&) override;
+
     Source& source;
 
     void paint (juce::Graphics&) override;
@@ -35,7 +42,7 @@ public:
     /** The fader section (keys, meter, fader) keeps this height; only the plugin area stretches. */
     static constexpr int faderSectionHeight = 360;
 
-    /** Height a strip needs to show everything with two plugin slots visible. */
+    /** Height a strip needs to show everything with one plugin slot visible. */
     static constexpr int minimumHeight = 12 + 28 + 4 + 24 + 6 + PluginChainEditor::minimumHeight
                                          + 28 + faderSectionHeight + 4 + 20 + 16 + 20;
 
@@ -51,6 +58,7 @@ private:
     int slot = 0;
     juce::String mixName;
     bool showingMicMuted = false;
+    bool dragActive = false;
     juce::Rectangle<int> badgeArea;
 
     ChannelIconButton iconButton;

@@ -42,6 +42,20 @@ private:
     void openSettings (int tab = 0);
     void openPluginScanner();
     void layoutStrips();
+    juce::Rectangle<int> slotBounds (int index) const;
+
+public:
+    /** Smallest window content height at which the faders still fit completely. */
+    static int getMinimumHeight();
+
+    void stripDragStarted (ChannelStrip&);
+    void stripDragged (ChannelStrip&);
+    void stripDragEnded (ChannelStrip&);
+
+private:
+    void animateOthers();
+    ChannelStrip* dragging = nullptr;
+    int dragFrom = 0, dragTarget = 0, dragGrabOffset = 0;
     void offerVirtualMicInstall();
 
     MixerEngine& engine;

@@ -14,13 +14,17 @@ public:
     }
 
     static constexpr int labelHeight = 13;
+    static constexpr int glowMargin = 5;     // room around the key so the glow isn't clipped
+    static constexpr int keySize = 34;
+    static constexpr int preferredWidth  = keySize + 2 * glowMargin;
+    static constexpr int preferredHeight = keySize + 2 * glowMargin + labelHeight;
 
     void paintButton (juce::Graphics& g, bool over, bool down) override
     {
         auto b = getLocalBounds().toFloat();
         auto label = b.removeFromBottom ((float) labelHeight);
-        const float size = juce::jmin (b.getWidth(), b.getHeight());
-        auto key = juce::Rectangle<float> (size, size).withCentre (b.getCentre()).reduced (1.0f);
+        const float size = juce::jmin (b.getWidth(), b.getHeight()) - 2.0f * (float) glowMargin;
+        auto key = juce::Rectangle<float> (size, size).withCentre (b.getCentre());
         const bool on = getToggleState();
 
         // well
@@ -30,8 +34,11 @@ public:
         // glow when lit
         if (on)
         {
-            g.setColour (lit.withAlpha (0.25f));
-            g.fillRoundedRectangle (key.expanded (4.0f), 7.0f);
+            // soft halo on all four sides
+            g.setColour (lit.withAlpha (0.12f));
+            g.fillRoundedRectangle (key.expanded ((float) glowMargin), 9.0f);
+            g.setColour (lit.withAlpha (0.22f));
+            g.fillRoundedRectangle (key.expanded ((float) glowMargin * 0.55f), 7.0f);
         }
 
         // key face

@@ -10,6 +10,7 @@ namespace
 constexpr int topBarHeight = 48;
 constexpr int statusBarHeight = 26;
 constexpr int stripGap = 6;
+constexpr int scrollBarThickness = 10;
 
 struct ScannerWindow final : public DocumentWindow
 {
@@ -86,10 +87,12 @@ MainComponent::MainComponent (MixerEngine& e) : engine (e)
 
     channelViewport.setViewedComponent (&channelHolder, false);
     channelViewport.setScrollBarsShown (false, true);
+    channelViewport.setScrollBarThickness (scrollBarThickness);
     addAndMakeVisible (channelViewport);
 
     outputViewport.setViewedComponent (&outputHolder, false);
     outputViewport.setScrollBarsShown (false, true);
+    outputViewport.setScrollBarThickness (scrollBarThickness);
     addAndMakeVisible (outputViewport);
 
     engine.onStructureChanged = [this] { triggerAsyncUpdate(); };
@@ -157,6 +160,7 @@ void MainComponent::offerVirtualMicInstall()
 //==============================================================================
 void MainComponent::rebuild()
 {
+    dragging = nullptr;
     channelStrips.clear();
     outputStrips.clear();
 
@@ -164,6 +168,9 @@ void MainComponent::rebuild()
     {
         auto* strip = channelStrips.add (new ChannelStrip (*s, engine, pluginWindows));
         strip->onScanRequested = [this] { openPluginScanner(); };
+        strip->onDragStart = [this] (ChannelStrip& c) { stripDragStarted (c); };
+        strip->onDrag      = [this] (ChannelStrip& c) { stripDragged (c); };
+        strip->onDragEnd   = [this] (ChannelStrip& c) { stripDragEnded (c); };
         channelHolder.addAndMakeVisible (strip);
     }
 
@@ -406,23 +413,109 @@ void MainComponent::resized()
 
 void MainComponent::layoutStrips()
 {
-    const int hScroll = 10;
+    // Strips are exactly as tall as the visible area (the scrollbar is not drawn over them).
+    const int chWidth = channelStrips.size() * (ChannelStrip::stripWidth + stripGap);
+    const bool chScroll = chWidth > channelViewport.getWidth();
+    const int chHeight = jmax (ChannelStrip::minimumHeight, channelViewport.getHeight() - (chScroll ? scrollBarThickness + 2 : 0));
+    channelHolder.setSize (jmax (channelViewport.getWidth(), chWidth), chHeight);
 
-    const int chHeight = jmax (ChannelStrip::minimumHeight, channelViewport.getHeight() - hScroll);
-    channelHolder.setSize (jmax (channelViewport.getWidth(), channelStrips.size() * (ChannelStrip::stripWidth + stripGap)), chHeight);
+    if (dragging == nullptr)
+        for (int i = 0; i < channelStrips.size(); ++i)
+            channelStrips[i]->setBounds (slotBounds (i));
+
+    const int outWidth = outputStrips.size() * (OutputStrip::stripWidth + stripGap);
+    const bool outScroll = outWidth > outputViewport.getWidth();
+    ignoreUnused (outScroll);
+    const int outHeight = chHeight;   // keep the mix strips level with the channel strips
+    outputHolder.setSize (jmax (outputViewport.getWidth(), outWidth), outHeight);
     int x = 0;
-    for (auto* s : channelStrips)
-    {
-        s->setBounds (x, 0, ChannelStrip::stripWidth, chHeight);
-        x += ChannelStrip::stripWidth + stripGap;
-    }
-
-    const int outHeight = jmax (ChannelStrip::minimumHeight, outputViewport.getHeight() - hScroll);
-    outputHolder.setSize (jmax (outputViewport.getWidth(), outputStrips.size() * (OutputStrip::stripWidth + stripGap)), outHeight);
-    x = 0;
     for (auto* s : outputStrips)
     {
         s->setBounds (x, 0, OutputStrip::stripWidth, outHeight);
         x += OutputStrip::stripWidth + stripGap;
+    }
+}
+
+Rectangle<int> MainComponent::slotBounds (int index) const
+{
+    return { index * (ChannelStrip::stripWidth + stripGap), 0, ChannelStrip::stripWidth, channelHolder.getHeight() };
+}
+
+int MainComponent::getMinimumHeight()
+{
+    return topBarHeight + statusBarHeight + 16 + scrollBarThickness + 2 + ChannelStrip::minimumHeight;
+}
+
+//==============================================================================
+// Drag a channel strip left/right to reorder; the others slide out of the way.
+void MainComponent::stripDragStarted (ChannelStrip& strip)
+{
+    dragging = &strip;
+    dragFrom = channelStrips.indexOf (&strip);
+    dragTarget = dragFrom;
+    dragGrabOffset = strip.getMouseXYRelative().x;
+    strip.toFront (false);
+    strip.setAlpha (0.92f);
+}
+
+void MainComponent::stripDragged (ChannelStrip& strip)
+{
+    if (dragging != &strip)
+        return;
+
+    const auto mouse = channelHolder.getMouseXYRelative();
+    const int maxX = jmax (0, (channelStrips.size() - 1) * (ChannelStrip::stripWidth + stripGap));
+    const int x = jlimit (0, maxX, mouse.x - dragGrabOffset);
+    strip.setTopLeftPosition (x, 0);
+
+    channelViewport.autoScroll (channelViewport.getLocalPoint (&channelHolder, mouse).x,
+                                channelViewport.getHeight() / 2, 40, 12);
+
+    const int target = jlimit (0, channelStrips.size() - 1,
+                               roundToInt ((float) x / (float) (ChannelStrip::stripWidth + stripGap)));
+
+    if (target != dragTarget)
+    {
+        dragTarget = target;
+        animateOthers();
+    }
+}
+
+void MainComponent::animateOthers()
+{
+    auto& animator = Desktop::getInstance().getAnimator();
+    int slot = 0;
+
+    for (auto* s : channelStrips)
+    {
+        if (s == dragging)
+            continue;
+        if (slot == dragTarget)
+            ++slot;
+        animator.animateComponent (s, slotBounds (slot), 1.0f, 160, false, 0.2, 0.0);
+        ++slot;
+    }
+}
+
+void MainComponent::stripDragEnded (ChannelStrip& strip)
+{
+    if (dragging != &strip)
+        return;
+
+    auto* source = &strip.source;
+    const int from = dragFrom, to = dragTarget;
+
+    Desktop::getInstance().getAnimator().animateComponent (&strip, slotBounds (to), 1.0f, 120, false, 0.2, 0.0);
+    strip.setAlpha (1.0f);
+    dragging = nullptr;
+
+    if (from != to)
+    {
+        SafePointer<MainComponent> safe (this);
+        Timer::callAfterDelay (140, [safe, source, to]
+        {
+            if (safe != nullptr)
+                safe->engine.moveSourceTo (source, to);   // rebuilds the strips in the new order
+        });
     }
 }
