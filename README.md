@@ -22,13 +22,7 @@ GitHub builds the installers automatically on every push to `main`.
 
 Faderhouse checks GitHub Releases once a day (and shortly after launch). When a new version is out, an **Update to x.y.z** button appears at the top of the mixer: it downloads the installer, verifies its SHA-256 checksum, opens it and closes Faderhouse; after installing, Faderhouse opens again. You can also check manually, or turn automatic checks off, in Settings → About & updates.
 
-To publish an update: raise the version in `CMakeLists.txt` (`project(Faderhouse VERSION x.y.z ...)`), commit, and push a matching tag:
-
-```bash
-git tag v0.4.1 && git push origin v0.4.1
-```
-
-GitHub then builds the installers and publishes them as a release.
+To publish an update: raise the version in `CMakeLists.txt` (`project(Faderhouse VERSION x.y.z ...)`) and push to `main`. When GitHub sees a version that has no release yet, it builds the installers and publishes release `vx.y.z` automatically. (Pushing a tag `vx.y.z` works too.)
 
 ## How it works
 
