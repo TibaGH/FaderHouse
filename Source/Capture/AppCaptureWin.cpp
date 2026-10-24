@@ -692,6 +692,8 @@ private:
     }
 
     //==========================================================================
+    // Two threads: the pump reads and mixes every few milliseconds and must never wait;
+    // the reconciler works out what to capture and opens clients (which can take a moment).
     void run()
     {
         ComThread com (COINIT_MULTITHREADED);
@@ -705,24 +707,35 @@ private:
             return;
         }
 
+        std::thread pumpThread ([this] { runPump(); });
+
         EndpointMuter muter;
-        auto lastTicks = juce::Time::getHighResolutionTicks();
-        double framesOwed = 0.0;
-        uint32_t lastReconcile = 0;
-        bool reconcileNow = true;
 
         while (! quit.load())
         {
-            const auto signalled = WaitForSingleObject (wake, 5) == WAIT_OBJECT_0;
-            reconcileNow = reconcileNow || signalled;
-
-            const auto nowMs = juce::Time::getMillisecondCounter();
-            if (reconcileNow || nowMs - lastReconcile > 750)
-            {
+            WaitForSingleObject (wake, 750);
+            if (! quit.load())
                 reconcile (enumerator.p, muter);
-                lastReconcile = nowMs;
-                reconcileNow = false;
-            }
+        }
+
+        pumpThread.join();
+
+        {
+            const std::lock_guard<std::mutex> l (lock);
+            clients.clear();
+        }
+        muter.release (enumerator.p);
+    }
+
+    void runPump()
+    {
+        ComThread com (COINIT_MULTITHREADED);
+        auto lastTicks = juce::Time::getHighResolutionTicks();
+        double framesOwed = 0.0;
+
+        while (! quit.load())
+        {
+            Sleep (4);
 
             // How many frames are due since last time, on a steady clock.
             const auto ticks = juce::Time::getHighResolutionTicks();
@@ -736,12 +749,6 @@ private:
 
             pump (due, rate);
         }
-
-        {
-            const std::lock_guard<std::mutex> l (lock);
-            clients.clear();
-        }
-        muter.release (enumerator.p);
     }
 
     /** Reads every client, mixes per channel and feeds the bridges. Capture thread. */
