@@ -18,6 +18,18 @@ GitHub builds the installers automatically on every push to `main`.
    - **`Faderhouse-x.y.z.dmg`**: the familiar window where you drag Faderhouse into Applications. The app offers to install Mic FX on first launch.
 3. The installers are not signed with a paid Apple Developer account, so macOS blocks them the first time. Go to System Settings → Privacy & Security and click **Open Anyway** at the bottom. You only need to do this once.
 
+## Updates
+
+Faderhouse checks GitHub Releases once a day (and shortly after launch). When a new version is out, an **Update to x.y.z** button appears at the top of the mixer: it downloads the installer, verifies its SHA-256 checksum, opens it and closes Faderhouse; after installing, Faderhouse opens again. You can also check manually, or turn automatic checks off, in Settings → About & updates.
+
+To publish an update: raise the version in `CMakeLists.txt` (`project(Faderhouse VERSION x.y.z ...)`), commit, and push a matching tag:
+
+```bash
+git tag v0.4.1 && git push origin v0.4.1
+```
+
+GitHub then builds the installers and publishes them as a release.
+
 ## How it works
 
 ```

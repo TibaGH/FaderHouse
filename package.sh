@@ -36,6 +36,13 @@ cat > "$WORK/scripts/postinstall" <<'EOF'
 # Remove the driver of early test builds and let Core Audio load Mic FX.
 rm -rf "/Library/Audio/Plug-Ins/HAL/MixwerkMic.driver"
 killall coreaudiod 2>/dev/null || launchctl kickstart -k system/com.apple.audio.coreaudiod 2>/dev/null || true
+
+# Open Faderhouse again for the logged-in user (handy after an in-app update).
+CONSOLE_USER=$(stat -f%Su /dev/console 2>/dev/null || true)
+if [ -n "$CONSOLE_USER" ] && [ "$CONSOLE_USER" != "root" ]; then
+    sleep 2
+    launchctl asuser "$(id -u "$CONSOLE_USER")" sudo -u "$CONSOLE_USER" open -a "/Applications/Faderhouse.app" 2>/dev/null || true
+fi
 exit 0
 EOF
 chmod +x "$WORK/scripts/postinstall"
@@ -119,6 +126,9 @@ else
     ln -s /Applications "$WORK/dmg/Applications"
     hdiutil create -volname "Faderhouse" -srcfolder "$WORK/dmg" -ov -format UDZO "$DMG"
 fi
+
+# --- checksums (the in-app updater verifies the .pkg against this) -----------------------
+(cd "$DIST" && shasum -a 256 "Faderhouse-$VERSION.pkg" "Faderhouse-$VERSION.dmg" > SHA256SUMS.txt)
 
 echo
 echo "==> Installers in dist/:"

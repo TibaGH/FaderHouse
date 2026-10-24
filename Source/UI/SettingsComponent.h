@@ -2,13 +2,14 @@
 
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "../Engine/MixerEngine.h"
+#include "../Update/Updater.h"
 
 /** Audio interface selection + where each mix goes. */
 class SettingsComponent final : public juce::Component,
                                 private juce::ChangeListener
 {
 public:
-    explicit SettingsComponent (MixerEngine& engine);
+    SettingsComponent (MixerEngine& engine, Updater* updater);
     ~SettingsComponent() override;
 
     std::function<void()> onRoutingChanged;
@@ -19,10 +20,12 @@ public:
 
 private:
     struct RoutingPanel;
+    struct AboutPanel;
 
     void changeListenerCallback (juce::ChangeBroadcaster*) override;
 
     MixerEngine& engine;
     juce::TabbedComponent tabs { juce::TabbedButtonBar::TabsAtTop };
     std::unique_ptr<RoutingPanel> routing;
+    std::unique_ptr<AboutPanel> about;
 };

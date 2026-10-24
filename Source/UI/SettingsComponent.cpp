@@ -245,7 +245,58 @@ struct SettingsComponent::RoutingPanel final : public Component
 };
 
 //==============================================================================
-SettingsComponent::SettingsComponent (MixerEngine& e) : engine (e)
+struct SettingsComponent::AboutPanel final : public Component
+{
+    explicit AboutPanel (Updater* u) : updater (u)
+    {
+        title.setText ("Faderhouse " + Updater::getCurrentVersion(), dontSendNotification);
+        title.setFont (FontOptions (18.0f, Font::bold));
+        addAndMakeVisible (title);
+
+        info.setText ("Updates come from github.com/" + String (Updater::repository) + " (Releases).\n"
+                      "When a new version is out, an \"Update\" button appears at the top of the mixer.",
+                      dontSendNotification);
+        info.setColour (Label::textColourId, Theme::textDim);
+        info.setJustificationType (Justification::topLeft);
+        addAndMakeVisible (info);
+
+        checkNow.setButtonText ("Check for updates now");
+        checkNow.onClick = [this] { if (updater != nullptr) updater->check (true); };
+        addAndMakeVisible (checkNow);
+
+        autoCheck.setButtonText ("Check for updates automatically");
+        autoCheck.setToggleState (updater == nullptr || updater->isAutoCheckEnabled(), dontSendNotification);
+        autoCheck.onClick = [this] { if (updater != nullptr) updater->setAutoCheckEnabled (autoCheck.getToggleState()); };
+        addAndMakeVisible (autoCheck);
+
+        releases.setButtonText ("Open the releases page");
+        releases.setURL (URL ("https://github.com/" + String (Updater::repository) + "/releases"));
+        addAndMakeVisible (releases);
+    }
+
+    void resized() override
+    {
+        auto area = getLocalBounds().reduced (16);
+        title.setBounds (area.removeFromTop (30));
+        area.removeFromTop (6);
+        info.setBounds (area.removeFromTop (44));
+        area.removeFromTop (10);
+        checkNow.setBounds (area.removeFromTop (28).removeFromLeft (220));
+        area.removeFromTop (10);
+        autoCheck.setBounds (area.removeFromTop (24).removeFromLeft (320));
+        area.removeFromTop (10);
+        releases.setBounds (area.removeFromTop (24).removeFromLeft (220));
+    }
+
+    Updater* updater;
+    Label title, info;
+    TextButton checkNow;
+    ToggleButton autoCheck;
+    HyperlinkButton releases;
+};
+
+//==============================================================================
+SettingsComponent::SettingsComponent (MixerEngine& e, Updater* updater) : engine (e)
 {
     auto* selector = new AudioDeviceSelectorComponent (engine.deviceManager,
                                                        1, 64,     // inputs
@@ -256,6 +307,9 @@ SettingsComponent::SettingsComponent (MixerEngine& e) : engine (e)
     routing = std::make_unique<RoutingPanel> (engine);
     routing->onChanged = [this] { if (onRoutingChanged) onRoutingChanged(); };
     tabs.addTab ("Mix routing", Theme::panel, routing.get(), false);
+
+    about = std::make_unique<AboutPanel> (updater);
+    tabs.addTab ("About & updates", Theme::panel, about.get(), false);
 
     tabs.setTabBarDepth (32);
     addAndMakeVisible (tabs);

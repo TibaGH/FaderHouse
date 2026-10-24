@@ -5,6 +5,7 @@
 #include "ChannelStrip.h"
 #include "OutputStrip.h"
 #include "PluginWindows.h"
+#include "../Update/Updater.h"
 
 /** Top-bar logo: the app icon plus the name. */
 struct LogoComponent final : public juce::Component
@@ -57,12 +58,18 @@ private:
     ChannelStrip* dragging = nullptr;
     int dragFrom = 0, dragTarget = 0, dragGrabOffset = 0;
     void offerVirtualMicInstall();
+    void showUpdateDialog (const Updater::Release&);
+    void startUpdate (const Updater::Release&);
 
     MixerEngine& engine;
     PluginWindowManager pluginWindows;
 
     LogoComponent logo;
     MicMuteButton micMuteButton;
+    std::unique_ptr<Updater> updater;
+    juce::TextButton updateButton;
+    Updater::Release pendingRelease;
+    double updateProgress = 0.0;
     juce::OwnedArray<juce::TextButton> mixTabs;
     juce::TextButton addChannelButton { "+ Channel" };
     juce::TextButton pluginsButton { "Plugins" };

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 # Core Audio process taps need macOS 14.2 or later.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "14.2" CACHE STRING "Minimum macOS version")
 
-project(Faderhouse VERSION 0.3.0 LANGUAGES C CXX)
+project(Faderhouse VERSION 0.4.0 LANGUAGES C CXX)
 
 if(APPLE)
     enable_language(OBJCXX)
@@ -47,6 +47,7 @@ target_sources(Faderhouse PRIVATE
     Source/Engine/MixerEngine.cpp
     Source/Engine/Session.cpp
     Source/Engine/PluginScanner.cpp
+    Source/Update/Updater.cpp
     Source/UI/FaderhouseLookAndFeel.cpp
     Source/UI/PluginChainEditor.cpp
     Source/UI/ChannelStrip.cpp
@@ -149,6 +150,7 @@ target_link_libraries(Faderhouse
         juce::juce_audio_devices
         juce::juce_gui_extra
         juce::juce_dsp
+        juce::juce_cryptography
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags

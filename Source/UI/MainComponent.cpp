@@ -95,6 +95,29 @@ MainComponent::MainComponent (MixerEngine& e) : engine (e)
     outputViewport.setScrollBarThickness (scrollBarThickness);
     addAndMakeVisible (outputViewport);
 
+    // In-app updates from GitHub Releases.
+    updater = std::make_unique<Updater> (*engine.settings);
+    updateButton.setColour (TextButton::buttonColourId, Theme::accent);
+    updateButton.setColour (TextButton::textColourOffId, Colours::black);
+    updateButton.onClick = [this] { showUpdateDialog (pendingRelease); };
+    addChildComponent (updateButton);
+    updater->onUpdateAvailable = [this] (const Updater::Release& r)
+    {
+        pendingRelease = r;
+        updateButton.setButtonText ("Update to " + r.version);
+        updateButton.setTooltip ("Faderhouse " + r.version + " is available - click for details");
+        updateButton.setVisible (true);
+        resized();
+    };
+    updater->onNoUpdate = [] (const String& msg)
+    {
+        AlertWindow::showMessageBoxAsync (MessageBoxIconType::InfoIcon, "Faderhouse is up to date", msg);
+    };
+    updater->onError = [] (const String& msg)
+    {
+        AlertWindow::showMessageBoxAsync (MessageBoxIconType::WarningIcon, "Update check failed", msg);
+    };
+
     engine.onStructureChanged = [this] { triggerAsyncUpdate(); };
     engine.onPluginAboutToBeDeleted = [this] (AudioProcessor* p) { pluginWindows.close (p); };
 
@@ -155,6 +178,80 @@ void MainComponent::offerVirtualMicInstall()
                 engineRef->settings->saveIfNeeded();
             }
         }));
+}
+
+void MainComponent::showUpdateDialog (const Updater::Release& r)
+{
+    auto notes = r.notes.trim();
+    if (notes.length() > 1200)
+        notes = notes.substring (0, 1200) + "...";
+
+    auto* w = new AlertWindow ("Faderhouse " + r.version + " is available",
+                               "You have " + Updater::getCurrentVersion() + ".\n\n"
+                               + (notes.isNotEmpty() ? notes : String ("See the release page for what's new.")),
+                               MessageBoxIconType::InfoIcon);
+    w->addButton ("Install update", 1, KeyPress (KeyPress::returnKey));
+    w->addButton ("Release page", 2);
+    w->addButton ("Skip this version", 3);
+    w->addButton ("Later", 0, KeyPress (KeyPress::escapeKey));
+
+    SafePointer<MainComponent> safe (this);
+    w->enterModalState (true, ModalCallbackFunction::create ([safe, r] (int result)
+    {
+        if (safe == nullptr)
+            return;
+
+        switch (result)
+        {
+            case 1: safe->startUpdate (r); break;
+            case 2: URL (r.pageUrl).launchInDefaultBrowser(); break;
+            case 3:
+                safe->updater->skipVersion (r.version);
+                safe->updateButton.setVisible (false);
+                safe->resized();
+                break;
+            default: break;
+        }
+    }), true);
+}
+
+void MainComponent::startUpdate (const Updater::Release& r)
+{
+    updateProgress = 0.0;
+    auto* w = new AlertWindow ("Downloading Faderhouse " + r.version,
+                               "The installer opens when the download is complete. Faderhouse then closes, "
+                               "so it can be replaced; your settings and channels stay as they are.",
+                               MessageBoxIconType::NoIcon);
+    w->addProgressBarComponent (updateProgress);
+    w->addButton ("Cancel", 0, KeyPress (KeyPress::escapeKey));
+
+    SafePointer<MainComponent> safe (this);
+    Component::SafePointer<AlertWindow> dialog (w);
+    w->enterModalState (true, ModalCallbackFunction::create ([safe] (int result)
+    {
+        if (result == 0 && safe != nullptr)
+            safe->updater->cancelDownload();
+    }), true);
+
+    updater->downloadAndInstall (r,
+        [safe] (double p) { if (safe != nullptr) safe->updateProgress = p; },
+        [safe, dialog] (const String& error)
+        {
+            if (dialog != nullptr)
+                dialog->exitModalState (-1);
+
+            if (error.isNotEmpty())
+            {
+                if (error != "Cancelled.")
+                    AlertWindow::showMessageBoxAsync (MessageBoxIconType::WarningIcon, "Update failed", error);
+                return;
+            }
+
+            // The installer is open: quit so it can replace the app.
+            if (safe != nullptr)
+                safe->engine.saveSession();
+            JUCEApplication::getInstance()->systemRequestedQuit();
+        });
 }
 
 //==============================================================================
@@ -284,7 +381,7 @@ void MainComponent::openSettings (int tab)
         return;
     }
 
-    auto* content = new SettingsComponent (engine);
+    auto* content = new SettingsComponent (engine, updater.get());
     content->onRoutingChanged = [this] { triggerAsyncUpdate(); };
 
     DialogWindow::LaunchOptions options;
@@ -387,6 +484,11 @@ void MainComponent::resized()
     top.removeFromRight (16);
     micMuteButton.setBounds (top.removeFromRight (120));
     top.removeFromRight (16);
+    if (updateButton.isVisible())
+    {
+        updateButton.setBounds (top.removeFromRight (130));
+        top.removeFromRight (10);
+    }
 
     for (auto* b : mixTabs)
     {
