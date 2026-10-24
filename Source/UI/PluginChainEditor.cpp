@@ -9,6 +9,12 @@ PluginChainEditor::PluginChainEditor (PluginChain& c, MixerEngine& e, PluginWind
     addButton.setTooltip ("Add a VST3 / AU plugin");
     addButton.onClick = [this] { showAddMenu(); };
     addAndMakeVisible (addButton);
+
+    // Slots scroll when there are more plugins than fit; the faders below keep their size.
+    viewport.setViewedComponent (&rowsHolder, false);
+    viewport.setScrollBarsShown (true, false);
+    viewport.setScrollBarThickness (6);
+    addAndMakeVisible (viewport);
     refresh();
 }
 
@@ -29,7 +35,7 @@ void PluginChainEditor::refresh()
         b->setTooltip (bypassed ? "Bypassed - right-click for options" : "Click to open, right-click for options");
         b->onClick = [this, i] { openEditor (i); };
         b->onMouseUp = [this, i] (const MouseEvent&) { showSlotMenu (i); };
-        addAndMakeVisible (b);
+        rowsHolder.addAndMakeVisible (b);
 
         auto* x = removeButtons.add (new TextButton (String::fromUTF8 ("\xc3\x97")));   // multiplication sign
         x->setTooltip ("Remove " + b->getButtonText());
@@ -47,7 +53,7 @@ void PluginChainEditor::refresh()
                 safe->refresh();
             });
         };
-        addAndMakeVisible (x);
+        rowsHolder.addAndMakeVisible (x);
     }
 
     addButton.setEnabled (chain.size() < PluginChain::maxSlots);
@@ -64,29 +70,21 @@ void PluginChainEditor::paint (Graphics& g)
 void PluginChainEditor::resized()
 {
     auto area = getLocalBounds().reduced (3);
+    addButton.setBounds (area.removeFromBottom (rowHeight));
+    area.removeFromBottom (2);
+    viewport.setBounds (area);
+
+    const bool needsScroll = slots.size() * (rowHeight + 2) > area.getHeight();
+    const int width = area.getWidth() - (needsScroll ? viewport.getScrollBarThickness() + 2 : 0);
+    rowsHolder.setSize (width, jmax (area.getHeight(), slots.size() * (rowHeight + 2)));
 
     for (int i = 0; i < slots.size(); ++i)
     {
-        auto* b = slots[i];
-        auto* x = removeButtons[i];
-
-        if (area.getHeight() < rowHeight * 2)
-        {
-            b->setVisible (false);
-            x->setVisible (false);
-            continue;
-        }
-
-        auto row = area.removeFromTop (rowHeight);
-        b->setVisible (true);
-        x->setVisible (true);
-        x->setBounds (row.removeFromRight (18));
-        b->setBounds (row);
-        b->setConnectedEdges (Button::ConnectedOnRight);
-        area.removeFromTop (2);
+        auto row = Rectangle<int> (0, i * (rowHeight + 2), width, rowHeight);
+        removeButtons[i]->setBounds (row.removeFromRight (18));
+        slots[i]->setBounds (row);
+        slots[i]->setConnectedEdges (Button::ConnectedOnRight);
     }
-
-    addButton.setBounds (area.removeFromTop (rowHeight));
 }
 
 void PluginChainEditor::openEditor (int index)

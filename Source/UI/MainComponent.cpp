@@ -96,7 +96,7 @@ MainComponent::MainComponent (MixerEngine& e) : engine (e)
     engine.onPluginAboutToBeDeleted = [this] (AudioProcessor* p) { pluginWindows.close (p); };
 
     rebuild();
-    setSize (1280, 720);
+    setSize (1280, 840);
     startTimerHz (30);
 
     // First run: offer to install our own virtual microphone.
@@ -328,7 +328,7 @@ void MainComponent::timerCallback()
     String status;
     if (auto* d = engine.deviceManager.getCurrentAudioDevice())
         status << d->getName() << "   " << String (d->getCurrentSampleRate() / 1000.0, 1) << " kHz / "
-               << d->getCurrentBufferSizeSamples() << " smp   CPU " << String (engine.deviceManager.getCpuUsage() * 100.0, 0) << "%";
+               << d->getCurrentBufferSizeSamples() << " smp   CPU " << roundToInt (engine.deviceManager.getCpuUsage() * 100.0) << "%";
     else
         status << "No audio interface selected - open Settings";
 
@@ -408,7 +408,7 @@ void MainComponent::layoutStrips()
 {
     const int hScroll = 10;
 
-    const int chHeight = jmax (420, channelViewport.getHeight() - hScroll);
+    const int chHeight = jmax (ChannelStrip::minimumHeight, channelViewport.getHeight() - hScroll);
     channelHolder.setSize (jmax (channelViewport.getWidth(), channelStrips.size() * (ChannelStrip::stripWidth + stripGap)), chHeight);
     int x = 0;
     for (auto* s : channelStrips)
@@ -417,7 +417,7 @@ void MainComponent::layoutStrips()
         x += ChannelStrip::stripWidth + stripGap;
     }
 
-    const int outHeight = jmax (420, outputViewport.getHeight() - hScroll);
+    const int outHeight = jmax (ChannelStrip::minimumHeight, outputViewport.getHeight() - hScroll);
     outputHolder.setSize (jmax (outputViewport.getWidth(), outputStrips.size() * (OutputStrip::stripWidth + stripGap)), outHeight);
     x = 0;
     for (auto* s : outputStrips)

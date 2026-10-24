@@ -505,19 +505,21 @@ void ChannelStrip::resized()
     infoLabel.setBounds (info);
     area.removeFromTop (6);
 
-    chainEditor.setBounds (area.removeFromTop (6 + 5 * (PluginChainEditor::rowHeight + 2) + PluginChainEditor::rowHeight));
-    badgeArea = area.removeFromTop (28).reduced (2, 4);  // MIC MUTED badge
-
+    // Bottom up: labels, fixed-size fader section, MIC MUTED badge. The plugin area gets the rest.
     mixLabel.setBounds (area.removeFromBottom (16));
     readout.setBounds (area.removeFromBottom (20).reduced (16, 1));
     area.removeFromBottom (4);
 
-    auto left = area.removeFromLeft (38);
+    auto section = area.removeFromBottom (faderSectionHeight);
+    badgeArea = area.removeFromBottom (28).reduced (2, 4);
+    chainEditor.setBounds (area);
+
+    auto left = section.removeFromLeft (38);
     muteButton.setBounds (left.removeFromTop (34 + ConsoleButton::labelHeight));
     left.removeFromTop (6);
     soloButton.setBounds (left.removeFromTop (34 + ConsoleButton::labelHeight));
     left.removeFromTop (10);
     meter.setBounds (left.reduced (8, 0));
 
-    fader.setBounds (area);
+    fader.setBounds (section);
 }

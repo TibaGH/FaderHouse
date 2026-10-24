@@ -148,19 +148,20 @@ void OutputStrip::resized()
     routeButton.setBounds (area.removeFromTop (24));
     area.removeFromTop (6);
 
-    chainEditor.setBounds (area.removeFromTop (6 + 5 * (PluginChainEditor::rowHeight + 2) + PluginChainEditor::rowHeight));
-    area.removeFromTop (28);
-
     caption.setBounds (area.removeFromBottom (16));
     readout.setBounds (area.removeFromBottom (20).reduced (16, 1));
     area.removeFromBottom (4);
 
-    auto left = area.removeFromLeft (38);
+    auto section = area.removeFromBottom (ChannelStrip::faderSectionHeight);
+    area.removeFromBottom (28);
+    chainEditor.setBounds (area);
+
+    auto left = section.removeFromLeft (38);
     muteButton.setBounds (left.removeFromTop (34 + ConsoleButton::labelHeight));
     left.removeFromTop (10);
     meter.setBounds (left.reduced (8, 0));
 
-    fader.setBounds (area);
+    fader.setBounds (section);
 }
 
 //==============================================================================

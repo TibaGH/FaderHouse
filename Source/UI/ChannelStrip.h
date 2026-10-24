@@ -32,6 +32,13 @@ public:
 
     static constexpr int stripWidth = 140;
 
+    /** The fader section (keys, meter, fader) keeps this height; only the plugin area stretches. */
+    static constexpr int faderSectionHeight = 360;
+
+    /** Height a strip needs to show everything with two plugin slots visible. */
+    static constexpr int minimumHeight = 12 + 28 + 4 + 24 + 6 + PluginChainEditor::minimumHeight
+                                         + 28 + faderSectionHeight + 4 + 20 + 16 + 20;
+
 private:
     void showChannelMenu();
     void showAppPicker();

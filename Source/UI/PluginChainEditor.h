@@ -19,6 +19,9 @@ public:
 
     static constexpr int rowHeight = 22;
 
+    /** Smallest useful height: two slots plus the add button. */
+    static constexpr int minimumHeight = 6 + 3 * (rowHeight + 2);
+
 private:
     void showAddMenu();
     void showSlotMenu (int index);
@@ -39,6 +42,8 @@ private:
     PluginWindowManager& windows;
     std::function<juce::String()> contextName;
 
+    juce::Viewport viewport;
+    juce::Component rowsHolder;
     juce::OwnedArray<SlotButton> slots;
     juce::OwnedArray<juce::TextButton> removeButtons;
     juce::TextButton addButton { "+ FX" };

@@ -2,6 +2,7 @@
 #include "Engine/MixerEngine.h"
 #include "Engine/PluginScanner.h"
 #include "UI/MainComponent.h"
+#include "UI/ChannelStrip.h"
 #include "UI/FaderhouseLookAndFeel.h"
 
 class FaderhouseApplication final : public juce::JUCEApplication
@@ -57,7 +58,8 @@ public:
             setUsingNativeTitleBar (true);
             setContentOwned (new MainComponent (engine), true);
             setResizable (true, true);
-            setResizeLimits (720, 520, 10000, 10000);
+            // Big enough that the faders always keep their full size (top bar + status bar + strip).
+            setResizeLimits (960, 48 + 26 + 16 + 10 + ChannelStrip::minimumHeight, 10000, 10000);
             centreWithSize (getWidth(), getHeight());
             setVisible (true);
         }
