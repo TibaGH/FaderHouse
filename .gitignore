@@ -1,0 +1,8 @@
+build/
+cmake-build-*/
+.DS_Store
+*.xcuserstate
+xcuserdata/
+.vscode/
+.idea/
+.tools/

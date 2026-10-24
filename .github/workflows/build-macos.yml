@@ -1,0 +1,43 @@
+name: Build macOS installers
+
+# Every push to main builds Faderhouse and uploads the .pkg and .dmg as artifacts
+# (Actions tab > latest run > Artifacts). Pushing a tag like v0.3.0 also publishes
+# them as a GitHub Release.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build
+        run: ./build.sh Release --no-open
+
+      - name: Make installers
+        run: |
+          python3 -m pip install --user --break-system-packages dmgbuild || python3 -m pip install --user dmgbuild
+          ./package.sh
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v7
+        with:
+          name: Faderhouse-macOS
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Publish release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/*
