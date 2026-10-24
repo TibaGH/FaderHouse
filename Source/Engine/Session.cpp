@@ -294,7 +294,10 @@ void MixerEngine::createDefaultSession()
         setAppIds (*discord, { "exe:Discord.exe" });
 
     if (auto* browser = addSource (SourceKind::App, "Browser"))
-        setAppIds (*browser, { "exe:chrome.exe", "exe:msedge.exe", "exe:firefox.exe" });
+        setAppIds (*browser, { "exe:chrome.exe", "exe:msedge.exe", "exe:firefox.exe", "exe:brave.exe", "exe:opera.exe" });
+
+    if (auto* music = addSource (SourceKind::App, "Music"))
+        setAppIds (*music, { "exe:TIDAL.exe", "exe:Spotify.exe", "exe:AppleMusic.exe" });
 
     if (auto* game = addSource (SourceKind::App, "Game"))
         game->icon = "game";

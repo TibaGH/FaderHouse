@@ -22,6 +22,18 @@ String httpGet (const String& url, int* status = nullptr)
 
     return stream != nullptr ? stream->readEntireStreamAsString() : String();
 }
+// macOS: Faderhouse-x.y.z.pkg   Windows: Faderhouse-x.y.z-Setup.exe
+bool isInstallerForThisPlatform (const String& assetName)
+{
+   #if JUCE_WINDOWS
+    return assetName.endsWithIgnoreCase ("-Setup.exe");
+   #elif JUCE_MAC
+    return assetName.endsWithIgnoreCase (".pkg");
+   #else
+    ignoreUnused (assetName);
+    return false;
+   #endif
+}
 } // namespace
 
 Updater::Updater (PropertiesFile& s) : settings (s), alive (std::make_shared<std::atomic<bool>> (true))
@@ -116,7 +128,7 @@ void Updater::check (bool userInitiated)
                     const auto name = asset["name"].toString();
                     const auto url = asset["browser_download_url"].toString();
 
-                    if (name.endsWithIgnoreCase (".pkg"))
+                    if (isInstallerForThisPlatform (name))
                     {
                         r.packageName = name;
                         r.packageUrl = url;
@@ -239,13 +251,19 @@ void Updater::downloadAndInstall (const Release& r, std::function<void (double)>
             return finish ("The download is damaged (checksum mismatch). Please try again.");
         }
 
-        // 4. Open it in the macOS Installer; the caller quits the app.
+        // 4. Start the installer; the caller quits the app.
+        //    macOS: opens in the Installer app (its postinstall opens Faderhouse again).
+        //    Windows: Inno Setup with a progress bar only; it starts Faderhouse again when done.
         MessageManager::callAsync ([flag, done, file]
         {
             if (! flag->load())
                 return;
 
+           #if JUCE_WINDOWS
+            const bool opened = file.startAsProcess ("/SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS");
+           #else
             const bool opened = file.startAsProcess();
+           #endif
             if (done) done (opened ? String() : "Couldn't open the installer: " + file.getFullPathName());
         });
     });

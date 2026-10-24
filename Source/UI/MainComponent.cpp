@@ -68,7 +68,8 @@ MainComponent::MainComponent (MixerEngine& e) : engine (e)
 {
     addAndMakeVisible (logo);
 
-    micMuteButton.setTooltip ("Mute your mic everywhere: Discord/OBS (Mic FX) and your monitor.  Shortcut: Cmd+Shift+M");
+    micMuteButton.setTooltip (String ("Mute your mic everywhere: Discord/OBS (Mic FX) and your monitor.  Shortcut: ")
+                             + ((SystemStats::getOperatingSystemType() & SystemStats::MacOSX) != 0 ? "Cmd+Shift+M" : "Ctrl+Shift+M"));
     micMuteButton.setToggleState (engine.isMicMuted(), dontSendNotification);
     micMuteButton.onClick = [this] { engine.setMicMuted (micMuteButton.getToggleState()); };
     addAndMakeVisible (micMuteButton);
@@ -150,6 +151,32 @@ MainComponent::~MainComponent()
 void MainComponent::offerVirtualMicInstall()
 {
     const auto state = VirtualMic::getState();
+
+   #if JUCE_WINDOWS
+    if (state == VirtualMic::State::Unsupported)
+    {
+        String type, name;
+        if (engine.findVirtualMicDevice (type, name) || engine.settings->getBoolValue ("virtualMicPromptDismissed", false))
+            return;
+
+        auto* engineRef = &engine;
+        AlertWindow::showOkCancelBox (MessageBoxIconType::QuestionIcon, "Set up Mic FX?",
+            "To send your processed mic to Discord and OBS, Faderhouse needs the free VB-CABLE driver "
+            "(Windows only accepts audio drivers signed by Microsoft, so Faderhouse can't bring its own).\n\n"
+            "Install VB-CABLE, restart Faderhouse, and choose \"CABLE Output\" as microphone in Discord / OBS. "
+            "You can also do this later in Settings > Mix routing.",
+            "Open VB-CABLE website", "Later", nullptr,
+            ModalCallbackFunction::create ([engineRef] (int ok)
+            {
+                if (ok)
+                    URL (VirtualMic::windowsCableUrl).launchInDefaultBrowser();
+
+                engineRef->settings->setValue ("virtualMicPromptDismissed", true);
+                engineRef->settings->saveIfNeeded();
+            }));
+        return;
+    }
+   #endif
     const bool update = state == VirtualMic::State::UpdateAvailable;
 
     if (state != VirtualMic::State::NotInstalled && ! update)

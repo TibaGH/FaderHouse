@@ -120,10 +120,17 @@ void MixerEngine::audioDeviceAboutToStart (AudioIODevice* device)
 
     const double sr = sampleRate;
     const int bs = blockSize;
-    MessageManager::callAsync ([this, sr, bs]
+    const String typeName = device->getTypeName(), deviceName = device->getName();
+    MessageManager::callAsync ([this, sr, bs, typeName, deviceName, alive = std::weak_ptr<int> (lifetime)]
     {
+        if (alive.expired())
+            return;
+
         if (capture != nullptr)
+        {
             capture->setTargetSampleRate (sr);
+            capture->setMainOutputDevice (typeName, deviceName);
+        }
 
         for (auto& o : outputs)
             if (o->device != nullptr)
@@ -137,6 +144,16 @@ void MixerEngine::audioDeviceAboutToStart (AudioIODevice* device)
 void MixerEngine::audioDeviceStopped()
 {
     running.store (false);
+
+    // Nothing plays the mix now: let the apps be heard normally again (Windows un-mutes its output).
+    MessageManager::callAsync ([this, alive = std::weak_ptr<int> (lifetime)]
+    {
+        if (alive.expired())
+            return;
+
+        if (capture != nullptr && deviceManager.getCurrentAudioDevice() == nullptr)
+            capture->setMainOutputDevice ({}, {});
+    });
 }
 
 void MixerEngine::prepareSource (Source& s)
@@ -734,7 +751,11 @@ void MixerEngine::autoRouteVirtualMic()
     if (findVirtualMicDevice (type, name))
         setMicFxDevice (type, name);
     else
+       #if JUCE_WINDOWS
+        micFx.status = "Install VB-CABLE (see Settings)";
+       #else
         micFx.status = "Install \"Mic FX\" in Settings";
+       #endif
 }
 
 //==============================================================================

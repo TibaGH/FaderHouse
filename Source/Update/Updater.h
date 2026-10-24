@@ -12,8 +12,9 @@
 
     - check(): asks the GitHub API for the latest release and compares its version tag
       (v1.2.3) with the running app.
-    - downloadAndInstall(): downloads the .pkg, verifies it against SHA256SUMS.txt from the
-      same release, opens it in the macOS Installer and quits so the app can be replaced.
+    - downloadAndInstall(): downloads the installer for this platform (macOS .pkg, Windows
+      -Setup.exe), verifies it against SHA256SUMS.txt from the same release, starts it and
+      quits so the app can be replaced.
 
     All network work happens on a background thread; callbacks arrive on the message thread.
 */
@@ -25,7 +26,7 @@ public:
         juce::String version;      // "0.4.0"
         juce::String notes;        // release notes (markdown)
         juce::String pageUrl;      // release page on GitHub
-        juce::String packageName;  // Faderhouse-0.4.0.pkg
+        juce::String packageName;  // Faderhouse-0.4.0.pkg / Faderhouse-0.4.0-Setup.exe
         juce::String packageUrl;
         juce::String checksumsUrl; // SHA256SUMS.txt
         juce::int64 packageSize = 0;

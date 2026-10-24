@@ -25,6 +25,11 @@ StringArray getPopularAppIds()
              "com.valvesoftware.steam", "us.zoom.xos", "com.microsoft.teams2", "net.whatsapp.WhatsApp",
              "com.tinyspeck.slackmacgap", "com.obsproject.obs-studio", "com.avid.ProTools",
              "com.apple.FaceTime", "com.apple.TV", "com.apple.podcasts" };
+   #elif JUCE_WINDOWS
+    return { "exe:Discord.exe", "exe:Spotify.exe", "exe:TIDAL.exe", "exe:chrome.exe", "exe:msedge.exe",
+             "exe:firefox.exe", "exe:brave.exe", "exe:opera.exe", "exe:steam.exe", "exe:Zoom.exe",
+             "exe:ms-teams.exe", "exe:WhatsApp.exe", "exe:slack.exe", "exe:obs64.exe", "exe:vlc.exe",
+             "exe:ProTools.exe", "exe:iTunes.exe", "exe:AppleMusic.exe" };
    #else
     return {};
    #endif

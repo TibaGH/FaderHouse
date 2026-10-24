@@ -12,6 +12,13 @@ endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Windows: link the C++ runtime statically, so Faderhouse.exe needs no Visual C++ redistributable.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+# Windows: path to the Steinberg ASIO SDK (the folder with common/iasiodrv.h). The CI downloads it.
+# Without it Faderhouse still builds, with the Windows Audio (WASAPI) devices only.
+set(FADERHOUSE_ASIO_SDK_DIR "" CACHE PATH "Path to the Steinberg ASIO SDK (Windows, optional)")
+
 # ---------------------------------------------------------------------------
 # JUCE: either point FADERHOUSE_JUCE_DIR at a local checkout, or it is downloaded.
 # ---------------------------------------------------------------------------
@@ -66,9 +73,20 @@ if(APPLE)
     target_link_libraries(Faderhouse PRIVATE "-framework CoreAudio" "-framework AppKit" "-framework Foundation")
 elseif(WIN32)
     target_sources(Faderhouse PRIVATE
-        Source/Capture/AppCaptureStub.cpp            # Windows backend: phase 3
-        Source/VirtualMic/VirtualMicInstallerStub.cpp
-        Source/UI/AppIconsStub.cpp)
+        Source/Capture/AppCaptureWin.cpp
+        Source/Capture/WinProcesses.cpp
+        Source/VirtualMic/VirtualMicInstallerStub.cpp   # Mic FX goes to VB-CABLE on Windows
+        Source/UI/AppIconsWin.cpp)
+    target_link_libraries(Faderhouse PRIVATE ole32 version shell32 user32 gdi32 advapi32)
+    target_compile_definitions(Faderhouse PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+
+    if(FADERHOUSE_ASIO_SDK_DIR AND EXISTS "${FADERHOUSE_ASIO_SDK_DIR}/common/iasiodrv.h")
+        message(STATUS "Faderhouse: building with ASIO support (${FADERHOUSE_ASIO_SDK_DIR})")
+        target_include_directories(Faderhouse PRIVATE "${FADERHOUSE_ASIO_SDK_DIR}/common")
+        set(FADERHOUSE_USE_ASIO 1)
+    else()
+        message(WARNING "Faderhouse: ASIO SDK not found, building without ASIO (set FADERHOUSE_ASIO_SDK_DIR)")
+    endif()
 else()
     target_sources(Faderhouse PRIVATE
         Source/Capture/AppCaptureStub.cpp
@@ -139,7 +157,9 @@ target_compile_definitions(Faderhouse PRIVATE
     JUCE_PLUGINHOST_AU=1
     JUCE_PLUGINHOST_LV2=0
     JUCE_PLUGINHOST_LADSPA=0
-    JUCE_ASIO=0   # set to 1 on Windows once you have the Steinberg ASIO SDK
+    JUCE_ASIO=$<BOOL:${FADERHOUSE_USE_ASIO}>
+    JUCE_WASAPI=1
+    JUCE_DIRECTSOUND=0
     JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:Faderhouse,JUCE_PRODUCT_NAME>"
     JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:Faderhouse,JUCE_VERSION>")
 

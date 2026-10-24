@@ -14,7 +14,13 @@ VirtualMicPanel::VirtualMicPanel (MixerEngine& e) : engine (e)
     status.setJustificationType (Justification::topLeft);
     addAndMakeVisible (status);
 
-    installButton.onClick = [this] { runInstall (engine); };
+    installButton.onClick = [this]
+    {
+        if (VirtualMic::getState() == VirtualMic::State::Unsupported)
+            URL (VirtualMic::windowsCableUrl).launchInDefaultBrowser();
+        else
+            runInstall (engine);
+    };
     removeButton.onClick  = [this] { runUninstall (engine); };
     addAndMakeVisible (installButton);
     addAndMakeVisible (removeButton);
@@ -34,9 +40,28 @@ void VirtualMicPanel::refresh()
     switch (state)
     {
         case State::Unsupported:
-            text = "Not available on this platform yet. Use a virtual cable (e.g. VB-CABLE) for now.";
+        {
+           #if JUCE_WINDOWS
+            // Windows only loads audio drivers signed by Microsoft, so Faderhouse uses the free
+            // VB-CABLE driver as its Mic FX device.
+            String type, name;
+            if (engine.findVirtualMicDevice (type, name))
+            {
+                text = "Using \"" + name + "\" as Mic FX. In Discord / OBS choose \"CABLE Output\" as microphone.";
+                buttonText = "VB-CABLE website";
+            }
+            else
+            {
+                text = "Windows needs the free VB-CABLE driver for Mic FX. Install it, restart Faderhouse, "
+                       "then choose \"CABLE Output\" as microphone in Discord / OBS.";
+                buttonText = "Get VB-CABLE";
+            }
+           #else
+            text = "Not available on this platform yet. Use a virtual cable for now.";
             canInstall = false;
+           #endif
             break;
+        }
         case State::NotBundled:
             text = "The driver is missing from the app bundle. Rebuild Faderhouse with build.sh.";
             canInstall = false;
@@ -72,13 +97,17 @@ void VirtualMicPanel::paint (Graphics& g)
 void VirtualMicPanel::resized()
 {
     auto area = getLocalBounds().reduced (10, 8);
-    auto buttons = area.removeFromRight (190);
+    auto buttons = area.removeFromRight (230);
     title.setBounds (area.removeFromTop (20));
     status.setBounds (area);
 
     buttons = buttons.withSizeKeepingCentre (buttons.getWidth(), 26);
-    removeButton.setBounds (buttons.removeFromRight (80));
-    buttons.removeFromRight (8);
+    removeButton.setVisible (VirtualMic::getState() != VirtualMic::State::Unsupported);
+    if (removeButton.isVisible())
+    {
+        removeButton.setBounds (buttons.removeFromRight (80));
+        buttons.removeFromRight (8);
+    }
     installButton.setBounds (buttons);
 }
 

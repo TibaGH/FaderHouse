@@ -1,4 +1,4 @@
-// Windows / Linux: no own virtual device yet (phase 3). On Windows use VB-CABLE meanwhile.
+// Windows / Linux: no own virtual device. On Windows, Mic FX goes to VB-CABLE (see VirtualMicPanel).
 
 #include "VirtualMicInstaller.h"
 

@@ -21,7 +21,7 @@ struct AudioProcessInfo
     into ClockBridges, while silencing the app's normal output.
 
     macOS: Core Audio process taps (AppCaptureMac.mm)
-    Windows: WASAPI process loopback (to do, phase 3)
+    Windows: WASAPI process loopback (AppCaptureWin.cpp)
 */
 class AppCaptureBackend
 {
@@ -52,6 +52,10 @@ public:
 
     /** Sample rate the mixer runs at; capture is delivered as close to it as possible. */
     virtual void setTargetSampleRate (double sampleRate) = 0;
+
+    /** The device Faderhouse plays the mix on. Windows uses it to decide whether the apps'
+        normal output can be muted (only when Faderhouse plays somewhere else). Message thread. */
+    virtual void setMainOutputDevice (const juce::String& /*typeName*/, const juce::String& /*deviceName*/) {}
 
     /** Stops all captures; apps go back to playing normally. Message thread. */
     virtual void stopAll() = 0;

@@ -192,6 +192,7 @@ private:
     std::vector<std::unique_ptr<Output>> outputs;
 
     std::unique_ptr<AppCaptureBackend> capture;
+    std::shared_ptr<int> lifetime = std::make_shared<int> (0);   // async callbacks check this is still alive
     MicFxOutput micFx;
     std::atomic<bool> micMuted { false };
 

@@ -2,10 +2,12 @@
 
 #include <juce_core/juce_core.h>
 
-/** Installs / removes the bundled "Mic FX" virtual device. macOS only for now. */
+/** Installs / removes the bundled "Mic FX" virtual device (macOS).
+    On Windows, Mic FX goes to VB-CABLE: Windows only loads Microsoft-signed audio drivers. */
 namespace VirtualMic
 {
     inline constexpr const char* deviceName = "Mic FX";
+    inline constexpr const char* windowsCableUrl = "https://vb-audio.com/Cable/";
 
     enum class State
     {

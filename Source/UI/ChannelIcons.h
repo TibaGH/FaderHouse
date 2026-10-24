@@ -10,14 +10,14 @@ struct Source;
     Ids:
       ""             automatic (the icon of the first assigned app, else a generic one)
       "mic", ...     one of the built-in line icons (see getGenericIds)
-      "app:<id>"     the real icon of an installed app (bundle id on macOS)
+      "app:<id>"     the real icon of an installed app (bundle id on macOS, exe:Name.exe on Windows)
 */
 namespace ChannelIcons
 {
     struct Generic { const char* id; const char* name; };
     const std::vector<Generic>& getGenericIds();
 
-    /** Bundle ids of popular apps we offer icons for, if they are installed on this Mac. */
+    /** Ids of popular apps we offer icons for, if they are installed (running, on Windows). */
     juce::StringArray getPopularAppIds();
 
     /** Draws a built-in icon into the area. */
