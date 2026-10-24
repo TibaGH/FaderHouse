@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 # Core Audio process taps need macOS 14.2 or later.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "14.2" CACHE STRING "Minimum macOS version")
 
-project(Faderhouse VERSION 0.4.0 LANGUAGES C CXX)
+project(Faderhouse VERSION 1.0.0 LANGUAGES C CXX)
 
 if(APPLE)
     enable_language(OBJCXX)

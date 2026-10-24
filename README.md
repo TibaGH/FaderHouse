@@ -6,17 +6,23 @@ Your own audio mixer in the spirit of Elgato Wave Link, without the vendor lock-
 - Every mix has a console-style fader per channel, with mute and solo.
 - Your mic goes through its own VST3/AU plugin chain straight to Discord and OBS. For that, Faderhouse has its own virtual microphone: **Mic FX**.
 
-Faderhouse 0.3 runs on **macOS 14.2+**. A Windows version is planned.
+Faderhouse 1.0 runs on **macOS 14.2 or later** on Apple Silicon Macs. A Windows version is planned.
 
-## Installing (no Terminal needed)
+## Installing
 
-GitHub builds the installers automatically on every push to `main`.
+1. Download the latest installer from **[Releases](https://github.com/TibaGH/faderhouse/releases/latest)**:
+   - **`Faderhouse-x.y.z.pkg`** (recommended): installs Faderhouse into Applications and the Mic FX virtual microphone in one go.
+   - **`Faderhouse-x.y.z.dmg`**: the familiar window where you drag Faderhouse into Applications. Faderhouse offers to install Mic FX on first launch.
+2. The installers are not signed with a paid Apple Developer account, so macOS blocks them the first time. Go to System Settings → Privacy & Security and click **Open Anyway** at the bottom. You only need to do this once.
+3. On first launch, allow access to the **microphone** and to **system audio recording**. Faderhouse needs these to use your interface's inputs and to capture the audio of individual apps.
 
-1. On GitHub, open **Actions** → the latest run of *Build macOS installers*, and download the **Faderhouse-macOS** artifact at the bottom. Tagged versions (`v0.3.0`) are also listed under **Releases**.
-2. Pick one of the two installers:
-   - **`Faderhouse-x.y.z.pkg`** (recommended): installs Faderhouse into Applications and Mic FX in one go.
-   - **`Faderhouse-x.y.z.dmg`**: the familiar window where you drag Faderhouse into Applications. The app offers to install Mic FX on first launch.
-3. The installers are not signed with a paid Apple Developer account, so macOS blocks them the first time. Go to System Settings → Privacy & Security and click **Open Anyway** at the bottom. You only need to do this once.
+## Getting started
+
+1. **Settings → Audio interface:** choose your USB/Thunderbolt interface as input and output and enable the inputs you use. A buffer of 64–128 samples works well.
+2. **Mic channel:** pick your mic input in the channel's dropdown.
+3. **Plugins → Scan** to load your AU and VST3 plugins.
+4. **Discord / OBS:** select **Mic FX** as your microphone, and turn off Discord's own noise suppression, echo cancellation and automatic gain: your plugin chain does that now.
+5. **Assign apps** to channels with the button under each channel name. Drag channels by their header to reorder them.
 
 ## Updates
 
@@ -73,14 +79,9 @@ All you need is Apple's compiler: Xcode or the Command Line Tools.
 | `Resources/` | App icon and DMG background (made with `Tools/IconRender`) |
 | `.github/workflows/` | Automatic macOS build and installers |
 
-## What has and hasn't been tested
+## Known limitations
 
-- **Tested:**
-  - The shared code and the interface run on Linux.
-  - The Mic FX ring buffer and the clock bridge (which keeps app audio and your interface in sync) were tested in simulation.
-  - Per-app capture, the virtual mic and its installer from version 0.2 worked on a real Mac.
-- **Not tested yet on a real Mac** (new in 0.3):
-  - the app filter and the app icons;
-  - the `.pkg` and `.dmg` installers.
-
-  A successful GitHub build only shows that they compile.
+- **AAX plugins** can't be hosted (see above).
+- **Plugin crashes during use:** plugins are scanned in a separate process, so a crashing plugin can't take Faderhouse down while scanning. While a plugin runs in a channel it does run inside Faderhouse, so a plugin that crashes then also closes Faderhouse.
+- **Global shortcut:** ⌘⇧M only works while Faderhouse is the active window.
+- **macOS only** for now.
