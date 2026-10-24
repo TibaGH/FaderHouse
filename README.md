@@ -1,80 +1,80 @@
 # Faderhouse
 
-Een eigen audiomixer à la Elgato Wave Link, zonder vendor lock-in.
+Your own audio mixer in the spirit of Elgato Wave Link, without the vendor lock-in.
 
-- Je maakt zoveel kanalen als je wilt en koppelt er apps aan, zoals Discord, je game, de browser of TIDAL.
-- Elke mix heeft per kanaal een analoge fader met mute en solo.
-- Je mic gaat met zijn eigen VST3/AU-pluginketen direct naar Discord en OBS. Daarvoor heeft Faderhouse een eigen virtuele microfoon: **Mic FX**.
+- Create as many channels as you like and assign apps to them, such as Discord, your game, the browser or TIDAL.
+- Every mix has a console-style fader per channel, with mute and solo.
+- Your mic goes through its own VST3/AU plugin chain straight to Discord and OBS. For that, Faderhouse has its own virtual microphone: **Mic FX**.
 
-Faderhouse 0.3 draait op **macOS 14.2+**. De Windows-versie volgt.
+Faderhouse 0.3 runs on **macOS 14.2+**. A Windows version is planned.
 
-## Installeren (zonder terminal)
+## Installing (no Terminal needed)
 
-GitHub bouwt bij elke push naar `main` automatisch de installers.
+GitHub builds the installers automatically on every push to `main`.
 
-1. Ga op GitHub naar **Actions** → de laatste run van *Build macOS installers*, en download onderaan het artifact **Faderhouse-macOS**. Bij een versie-tag (`v0.3.0`) staan ze ook onder **Releases**.
-2. Kies een van de twee installers:
-   - **`Faderhouse-x.y.z.pkg`** (aanbevolen): installeert Faderhouse in Programma's én Mic FX in één keer.
-   - **`Faderhouse-x.y.z.dmg`**: het bekende venster waarin je Faderhouse naar Programma's sleept. De app biedt bij de eerste start aan om Mic FX te installeren.
-3. De installers zijn niet ondertekend met een betaald Apple Developer-account. Daarom blokkeert macOS de eerste keer. Ga dan naar Systeeminstellingen → Privacy en beveiliging en klik onderaan op **Toch openen**. Dat hoeft maar één keer.
+1. On GitHub, open **Actions** → the latest run of *Build macOS installers*, and download the **Faderhouse-macOS** artifact at the bottom. Tagged versions (`v0.3.0`) are also listed under **Releases**.
+2. Pick one of the two installers:
+   - **`Faderhouse-x.y.z.pkg`** (recommended): installs Faderhouse into Applications and Mic FX in one go.
+   - **`Faderhouse-x.y.z.dmg`**: the familiar window where you drag Faderhouse into Applications. The app offers to install Mic FX on first launch.
+3. The installers are not signed with a paid Apple Developer account, so macOS blocks them the first time. Go to System Settings → Privacy & Security and click **Open Anyway** at the bottom. You only need to do this once.
 
-## Hoe het werkt
+## How it works
 
 ```
  Discord ─┐   Core Audio taps     ┌─ Discord ─ FX ─ fader/mute/solo ─┐
- Game    ─┤   (per app; de app    ├─ Game    ─ FX ─ fader/mute/solo ─┤
- Browser ─┤    zelf wordt stil)   ├─ Browser ─ FX ─ fader/mute/solo ─┼─► Mix "Monitor" ─ FX ─ master ─► interface out 1/2
- Rest    ─┘                       └─ System  ─ FX ─ fader/mute/solo ─┘
- Mic (interface in) ───────────────── Mic     ─ FX ─┬─ fader/mute/solo ──► (in Monitor, standaard uit)
-                                                    └─ direct, zonder fader ─► Mic FX ─► Discord / OBS
+ Game    ─┤   (per app; the app   ├─ Game    ─ FX ─ fader/mute/solo ─┤
+ Browser ─┤    itself goes        ├─ Browser ─ FX ─ fader/mute/solo ─┼─► Mix "Monitor" ─ FX ─ master ─► interface out 1/2
+ Rest    ─┘    silent)            └─ System  ─ FX ─ fader/mute/solo ─┘
+ Mic (interface in) ───────────────── Mic     ─ FX ─┬─ fader/mute/solo ──► (in Monitor, off by default)
+                                                    └─ direct, no fader ──► Mic FX ─► Discord / OBS
 ```
 
-- **Mic FX** krijgt altijd alleen je mic, na de plugins en zonder fader; de gain stel je op je interface in. Welke inputkanalen erheen gaan, kies je in het ⋯-menu van een kanaal met *Send to Mic FX*.
-- **MIC LIVE / MIC MUTED** bovenaan mute je mic overal: in Mic FX en in je monitor. De sneltoets is ⌘⇧M. Die werkt wanneer Faderhouse het actieve venster is.
-- **Mute** en **Solo** op een kanaal werken per mix. Solo laat in die mix alleen de gesoloede kanalen horen. Met Alt-klik op Solo solo je alleen dat ene kanaal.
-- **Faders:** dubbelklik zet een fader terug op 0 dB, Shift-slepen verstelt fijn, en helemaal onderaan is −∞.
-- **Plugins:** klik op een slot om de plugin te openen, of op × om hem te verwijderen. Rechtsklik geeft bypass en volgorde.
-- **Icoontjes:** klik op het icoon linksboven in een kanaal. Je kiest uit eigen icoontjes of uit de echte app-iconen van je Mac. *Automatic* gebruikt het icoon van de gekoppelde app.
-- **App koppelen:** de lijst toont alleen echte apps, met hun helper-processen eronder gegroepeerd. Onderaan zet je de systeemprocessen alsnog aan.
+- **Mic FX** always carries only your mic, after its plugins and without a fader; set the gain on your interface. Choose which input channels feed it with *Send to Mic FX* in a channel's ⋯ menu.
+- **MIC LIVE / MIC MUTED** at the top mutes your mic everywhere: in Mic FX and in your monitor. The shortcut is ⌘⇧M; it works while Faderhouse is the active window.
+- **Mute** and **Solo** on a channel work per mix. Solo plays only the soloed channels in that mix. Alt-click Solo to solo just that one channel.
+- **Faders:** double-click resets a fader to 0 dB, Shift-drag adjusts finely, and the very bottom is −∞.
+- **Plugins:** click a slot to open the plugin, or × to remove it. Right-click for bypass and order.
+- **Icons:** click the icon at the top left of a channel. Choose one of the built-in icons or the real app icons on your Mac. *Automatic* uses the icon of the assigned app.
+- **Assigning apps:** the list shows only real apps, with their helper processes grouped under them. You can show system processes at the bottom of the list.
 
-**Over plugins:** Faderhouse host **AU** en **VST3**. **AAX kan niet**; dat formaat is van Avid en kan alleen in Pro Tools draaien. Installeer je plugins dus ook als AU of VST3. Bij de meeste fabrikanten vink je dat aan in hun installer, zonder extra licentie.
+**About plugins:** Faderhouse hosts **AU** and **VST3**. **AAX is not possible**: it is Avid's format and only runs inside Pro Tools. Install your plugins as AU or VST3 as well. With most vendors you tick that in their installer, at no extra cost.
 
-Faderhouse slaat alles automatisch op in `~/Library/Application Support/Faderhouse/`.
+Faderhouse saves everything automatically in `~/Library/Application Support/Faderhouse/`.
 
-## Zelf bouwen
+## Building it yourself
 
-Je hebt alleen Apple's compiler nodig: Xcode of de Command Line Tools.
+All you need is Apple's compiler: Xcode or the Command Line Tools.
 
 ```bash
-./build.sh            # bouwt Faderhouse.app (haalt zo nodig een eigen CMake op in .tools/)
-./package.sh          # maakt dist/Faderhouse-x.y.z.pkg en .dmg
+./build.sh            # builds Faderhouse.app (fetches a private CMake into .tools/ if needed)
+./package.sh          # makes dist/Faderhouse-x.y.z.pkg and .dmg
 ```
 
-## Verwijderen
+## Uninstalling
 
-1. Verwijder Mic FX in Settings → Mix routing → **Remove**.
-2. Gooi Faderhouse uit Programma's weg.
-3. Verwijder eventueel ook `~/Library/Application Support/Faderhouse/`.
+1. Remove Mic FX in Settings → Mix routing → **Remove**.
+2. Move Faderhouse from Applications to the Trash.
+3. Optionally delete `~/Library/Application Support/Faderhouse/`.
 
-## Projectstructuur
+## Project layout
 
-| Map | Inhoud |
+| Folder | Contents |
 |---|---|
-| `Source/Engine/` | Mixer-engine, klokbrug, pluginketens, extra outputs, sessie |
+| `Source/Engine/` | Mixer engine, clock bridge, plugin chains, extra outputs, session |
 | `Source/Capture/` | Per-app capture (macOS: Core Audio process taps) |
-| `Source/VirtualMic/` | De Mic FX-driver (Core Audio HAL-plugin via libASPL) en de installer |
-| `Source/UI/` | Interface: console-faders, knoppen, iconen, strips, instellingen, logo |
-| `Resources/` | App-icoon en DMG-achtergrond (gemaakt met `Tools/IconRender`) |
-| `.github/workflows/` | Automatische macOS-build en installers |
+| `Source/VirtualMic/` | The Mic FX driver (Core Audio HAL plug-in via libASPL) and its installer |
+| `Source/UI/` | Interface: console faders, keys, icons, strips, settings, logo |
+| `Resources/` | App icon and DMG background (made with `Tools/IconRender`) |
+| `.github/workflows/` | Automatic macOS build and installers |
 
-## Wat wel en niet getest is
+## What has and hasn't been tested
 
-- **Getest:**
-  - De gedeelde code en de interface draaien op Linux.
-  - De ringbuffer van Mic FX en de klokbrug (die app-audio en je interface synchroon houdt) zijn met simulaties getest.
-  - De oude app-capture, Mixwerk Mic en de installer uit versie 0.2 werkten bij jou op je Mac.
-- **Niet getest, omdat ik geen Mac heb:** de onderdelen die alleen op macOS draaien en die nieuw zijn in 0.3:
-  - de app-filter en de app-iconen;
-  - de `.pkg`- en `.dmg`-installers.
+- **Tested:**
+  - The shared code and the interface run on Linux.
+  - The Mic FX ring buffer and the clock bridge (which keeps app audio and your interface in sync) were tested in simulation.
+  - Per-app capture, the virtual mic and its installer from version 0.2 worked on a real Mac.
+- **Not tested yet on a real Mac** (new in 0.3):
+  - the app filter and the app icons;
+  - the `.pkg` and `.dmg` installers.
 
-  Dat de build op GitHub slaagt, laat zien of ze compileren.
+  A successful GitHub build only shows that they compile.
