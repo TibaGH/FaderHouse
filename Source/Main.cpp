@@ -1,5 +1,6 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "Engine/MixerEngine.h"
+#include "Engine/PluginScanner.h"
 #include "UI/MainComponent.h"
 #include "UI/FaderhouseLookAndFeel.h"
 
@@ -8,10 +9,22 @@ class FaderhouseApplication final : public juce::JUCEApplication
 public:
     const juce::String getApplicationName() override       { return JUCE_APPLICATION_NAME_STRING; }
     const juce::String getApplicationVersion() override    { return JUCE_APPLICATION_VERSION_STRING; }
-    bool moreThanOneInstanceAllowed() override             { return false; }
+    // Must be true so the plugin-scanner helper (a second copy of this binary) can start.
+    // A second *GUI* instance is prevented with an inter-process lock below.
+    bool moreThanOneInstanceAllowed() override             { return true; }
 
-    void initialise (const juce::String&) override
+    void initialise (const juce::String& commandLine) override
     {
+        if (PluginScanner::runAsScannerIfRequested (commandLine))
+            return;   // this process only scans plugins for the main app
+
+        instanceLock = std::make_unique<juce::InterProcessLock> ("FaderhouseMainInstance");
+        if (! instanceLock->enter (0))
+        {
+            quit();   // Faderhouse is already running
+            return;
+        }
+
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
 
         engine = std::make_unique<MixerEngine>();
@@ -25,6 +38,7 @@ public:
         mainWindow.reset();   // closes plugin editors first
         engine.reset();       // saves the session, stops capture, unloads plugins
         juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
+        instanceLock.reset();
     }
 
     void systemRequestedQuit() override                    { quit(); }
@@ -58,6 +72,7 @@ private:
     FaderhouseLookAndFeel lookAndFeel;
     std::unique_ptr<MixerEngine> engine;
     std::unique_ptr<MainWindow> mainWindow;
+    std::unique_ptr<juce::InterProcessLock> instanceLock;
 };
 
 START_JUCE_APPLICATION (FaderhouseApplication)

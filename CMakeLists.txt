@@ -46,6 +46,7 @@ target_sources(Faderhouse PRIVATE
     Source/Engine/ExtraOutputDevice.cpp
     Source/Engine/MixerEngine.cpp
     Source/Engine/Session.cpp
+    Source/Engine/PluginScanner.cpp
     Source/UI/FaderhouseLookAndFeel.cpp
     Source/UI/PluginChainEditor.cpp
     Source/UI/ChannelStrip.cpp

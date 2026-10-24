@@ -1,4 +1,5 @@
 #include "MixerEngine.h"
+#include "PluginScanner.h"
 
 using namespace juce;
 
@@ -47,6 +48,9 @@ MixerEngine::MixerEngine()
         knownPlugins.recreateFromXml (*xml);
 
     knownPlugins.addChangeListener (this);
+
+    // Scan every plugin in a separate helper process, so a crashing plugin can't take Faderhouse down.
+    PluginScanner::install (knownPlugins);
 }
 
 MixerEngine::~MixerEngine()
