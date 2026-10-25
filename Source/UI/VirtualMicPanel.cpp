@@ -47,13 +47,14 @@ void VirtualMicPanel::refresh()
             String type, name;
             if (engine.findVirtualMicDevice (type, name))
             {
-                text = "Using \"" + name + "\" as Mic FX. In Discord / OBS choose \"CABLE Output\" as microphone.";
+                text = "Using \"" + name + "\" (VB-CABLE by VB-Audio, donationware: www.vb-cable.com) as Mic FX. "
+                       "\"CABLE Output\" is your Windows default microphone; Discord / OBS on \"Default\" use it.";
                 buttonText = "VB-CABLE website";
             }
             else
             {
-                text = "Windows needs the free VB-CABLE driver for Mic FX. Install it, restart Faderhouse, "
-                       "then choose \"CABLE Output\" as microphone in Discord / OBS.";
+                text = "Mic FX on Windows uses the free VB-CABLE driver (normally installed with Faderhouse). "
+                       "Install it, restart your PC, then choose \"CABLE Output\" as microphone in Discord / OBS.";
                 buttonText = "Get VB-CABLE";
             }
            #else

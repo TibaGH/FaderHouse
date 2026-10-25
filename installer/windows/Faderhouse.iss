@@ -14,6 +14,10 @@
 #ifndef OutputDir
   #define OutputDir "..\..\dist"
 #endif
+; Extracted VB-CABLE driver pack (VB-Audio, donationware, www.vb-cable.com). Optional.
+#ifndef CableDir
+  #define CableDir ""
+#endif
 
 [Setup]
 AppId={{96CC0BC9-6483-4578-B3FB-1B4558EDA075}
@@ -44,17 +48,58 @@ CloseApplications=yes
 RestartApplications=no
 
 [Tasks]
+#if CableDir != ""
+Name: "vbcable"; Description: "Install VB-CABLE for Mic FX (your processed mic for Discord / OBS). VB-CABLE is made by VB-Audio (www.vb-cable.com) and is donationware: all participations are welcome."; Check: not CableAlreadyInstalled
+#endif
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
 Source: "{#SourceExe}"; DestDir: "{app}"; Flags: ignoreversion
+#if CableDir != ""
+Source: "{#CableDir}\*"; DestDir: "{app}\VB-CABLE"; Flags: ignoreversion recursesubdirs createallsubdirs
+#endif
 
 [Icons]
 Name: "{autoprograms}\Faderhouse"; Filename: "{app}\Faderhouse.exe"
 Name: "{autodesktop}\Faderhouse"; Filename: "{app}\Faderhouse.exe"; Tasks: desktopicon
 
 [Run]
+#if CableDir != ""
+; VB-CABLE first. Windows asks once whether to trust VB-Audio's driver.
+Filename: "{app}\VB-CABLE\VBCABLE_Setup_x64.exe"; Parameters: "-i -h"; StatusMsg: "Installing VB-CABLE (Mic FX)..."; Flags: waituntilterminated; Tasks: vbcable
+#endif
 ; Normal install: the usual "Launch Faderhouse" tick box on the last page.
 Filename: "{app}\Faderhouse.exe"; Description: "{cm:LaunchProgram,Faderhouse}"; Flags: nowait postinstall skipifsilent runasoriginaluser
 ; In-app update (silent): open Faderhouse again straight away.
 Filename: "{app}\Faderhouse.exe"; Flags: nowait skipifnotsilent runasoriginaluser
+
+[Code]
+var
+  CableInstalledAtStart: Boolean;
+
+function CableAlreadyInstalled(): Boolean;
+begin
+  Result := CableInstalledAtStart;
+end;
+
+function InitializeSetup(): Boolean;
+var
+  Code: Integer;
+begin
+  // Is a VB-Audio virtual cable already there? (Then we don't install it again.)
+  CableInstalledAtStart :=
+    Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+         '-NoProfile -NonInteractive -Command "if (Get-PnpDevice -FriendlyName ''*VB-Audio*'' -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"',
+         '', SW_HIDE, ewWaitUntilTerminated, Code) and (Code = 0);
+  Result := True;
+end;
+
+function NeedRestart(): Boolean;
+begin
+  // VB-Audio asks for a restart after installing the driver.
+#if CableDir != ""
+  Result := (not CableInstalledAtStart) and WizardIsTaskSelected('vbcable');
+#else
+  Result := False;
+#endif
+end;

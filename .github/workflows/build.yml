@@ -86,6 +86,26 @@ jobs:
           Write-Host "ASIO SDK: $sdk"
           "ASIO_SDK_DIR=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
+      - name: Download VB-CABLE (Mic FX on Windows, VB-Audio donationware)
+        shell: pwsh
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP "vbcable.zip"
+          $ok = $false
+          foreach ($n in 46, 45, 44, 43) {
+            $url = "https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack$n.zip"
+            try { Invoke-WebRequest -Uri $url -OutFile $zip -ErrorAction Stop; Write-Host "Got $url"; $ok = $true; break } catch { Write-Host "Not at $url" }
+          }
+          if (-not $ok) { throw "Could not download the VB-CABLE driver pack" }
+          $dir = Join-Path $env:RUNNER_TEMP "vbcable"
+          Expand-Archive $zip -DestinationPath $dir -Force
+          $setup = Get-ChildItem $dir -Recurse -Filter VBCABLE_Setup_x64.exe | Select-Object -First 1
+          if (-not $setup) { throw "VBCABLE_Setup_x64.exe not found in the driver pack" }
+          # Only ship it if VB-Audio's own signature on the installer checks out.
+          $sig = Get-AuthenticodeSignature $setup.FullName
+          Write-Host "Signature: $($sig.Status) - $($sig.SignerCertificate.Subject)"
+          if ($sig.Status -ne "Valid") { throw "VB-CABLE installer signature is not valid: $($sig.Status)" }
+          "CABLE_DIR=$($setup.Directory.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
       - name: Build
         shell: pwsh
         run: |
@@ -106,7 +126,7 @@ jobs:
           $exe = Resolve-Path "build\Faderhouse_artefacts\Release\Faderhouse.exe"
           $dist = Join-Path $PWD "dist"
           New-Item -ItemType Directory -Force $dist | Out-Null
-          & $isccPath "/DAppVersion=${{ needs.version.outputs.version }}" "/DSourceExe=$exe" "/DOutputDir=$dist" installer\windows\Faderhouse.iss
+          & $isccPath "/DAppVersion=${{ needs.version.outputs.version }}" "/DSourceExe=$exe" "/DOutputDir=$dist" "/DCableDir=$env:CABLE_DIR" installer\windows\Faderhouse.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Get-ChildItem $dist
 

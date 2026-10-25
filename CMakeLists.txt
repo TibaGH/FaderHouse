@@ -76,6 +76,7 @@ elseif(WIN32)
         Source/Capture/AppCaptureWin.cpp
         Source/Capture/WinProcesses.cpp
         Source/VirtualMic/VirtualMicInstallerStub.cpp   # Mic FX goes to VB-CABLE on Windows
+        Source/VirtualMic/WinDefaultDevices.cpp
         Source/UI/AppIconsWin.cpp)
     target_link_libraries(Faderhouse PRIVATE ole32 version shell32 user32 gdi32 advapi32)
     target_compile_definitions(Faderhouse PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)

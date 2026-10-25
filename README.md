@@ -28,7 +28,7 @@ Both versions have the same mixer, plugin chains, mixes and updates. The differe
 ## Installing on Windows
 
 1. Download **`Faderhouse-x.y.z-Setup.exe`** and run it. The installer isn't signed with a paid certificate, so Windows SmartScreen may warn you the first time: click **More info → Run anyway**.
-2. **Mic FX:** Windows only loads audio drivers that Microsoft has signed, so Faderhouse can't bring its own virtual microphone there. Install the free **[VB-CABLE](https://vb-audio.com/Cable/)** driver once; Faderhouse finds it by itself and sends your processed mic into it. In Discord / OBS, choose **CABLE Output** as microphone.
+2. **Mic FX:** Windows only loads audio drivers that Microsoft has signed, so Faderhouse can't bring its own virtual microphone there. The installer therefore also installs **[VB-CABLE](https://vb-audio.com/Cable/)** by VB-Audio (tick box, on by default). Windows asks once whether to trust VB-Audio's driver; click **Install**, and restart your PC when the installer asks. Faderhouse then sends your processed mic into it and makes **CABLE Output** your Windows default microphone, so Discord / OBS set to *Default* pick it up. VB-CABLE is donationware: if you like it, support VB-Audio at [www.vb-cable.com](https://vb-audio.com/Cable/).
 3. In Faderhouse, **Settings → Audio interface:** choose your interface's **ASIO** driver. See [Windows](#windows) for why.
 
 ## Getting started
@@ -76,7 +76,7 @@ Faderhouse for Windows works like the Mac version, with a few differences that c
 - **Per-app capture** uses WASAPI *process loopback*, which needs **Windows 11** (build 20348 or newer). On Windows 10 the mixer, inputs, plugins and Mic FX work, but apps can't be put on channels.
 - **Silencing the apps' normal output:** macOS can mute an app while Faderhouse captures it; Windows can't. Instead, while Faderhouse plays your mix on a different output than the Windows default (an **ASIO** driver, or another device), it **mutes the Windows default output device**. The apps then only reach your ears through Faderhouse. When Faderhouse closes, the mute is undone (also after a crash, on the next start). If Faderhouse plays on the same device as the Windows default through Windows Audio, it can't mute it and you'd hear apps twice; the status line in the mixer tells you.
 - **ASIO and Pro Tools:** many ASIO drivers allow only one program at a time. If Pro Tools uses your interface's ASIO driver, Faderhouse can't use it at the same time (unless your driver is multi-client).
-- **Mic FX** goes into [VB-CABLE](https://vb-audio.com/Cable/) (free): Windows only loads audio drivers signed by Microsoft, which costs a company certificate. Discord / OBS then use **CABLE Output** as microphone.
+- **Mic FX** goes into [VB-CABLE](https://vb-audio.com/Cable/) by VB-Audio (donationware, installed with Faderhouse): Windows only loads audio drivers signed by Microsoft, which needs a company certificate. Faderhouse makes **CABLE Output** the Windows default microphone once, and moves the Windows default output away from **CABLE Input** if Windows put it there, so apps don't play into your mic.
 - **System channel:** everything that plays and isn't on another channel. Windows' own notification sounds that don't belong to an app may not be captured.
 - **Plugins:** VST3 only (AU is a Mac format).
 
@@ -106,7 +106,7 @@ The GitHub workflow does all of this for both platforms on every push.
 2. Move Faderhouse from Applications to the Trash.
 3. Optionally delete `~/Library/Application Support/Faderhouse/`.
 
-**Windows:** Settings → Apps → Installed apps → Faderhouse → **Uninstall**. Optionally delete `%APPDATA%\Faderhouse\`. VB-CABLE has its own uninstaller.
+**Windows:** Settings → Apps → Installed apps → Faderhouse → **Uninstall**. Optionally delete `%APPDATA%\Faderhouse\`. VB-CABLE stays installed; to remove it, download the driver pack from [VB-Audio](https://vb-audio.com/Cable/), run `VBCABLE_Setup_x64.exe` as administrator and click *Remove Driver*.
 
 ## Project layout
 

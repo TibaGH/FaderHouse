@@ -161,9 +161,9 @@ void MainComponent::offerVirtualMicInstall()
 
         auto* engineRef = &engine;
         AlertWindow::showOkCancelBox (MessageBoxIconType::QuestionIcon, "Set up Mic FX?",
-            "To send your processed mic to Discord and OBS, Faderhouse needs the free VB-CABLE driver "
-            "(Windows only accepts audio drivers signed by Microsoft, so Faderhouse can't bring its own).\n\n"
-            "Install VB-CABLE, restart Faderhouse, and choose \"CABLE Output\" as microphone in Discord / OBS. "
+            "To send your processed mic to Discord and OBS, Faderhouse uses the free VB-CABLE driver. "
+            "It normally comes with the Faderhouse installer, but it isn't installed (or needs a restart of your PC).\n\n"
+            "Install VB-CABLE, restart your PC, and choose \"CABLE Output\" as microphone in Discord / OBS. "
             "You can also do this later in Settings > Mix routing.",
             "Open VB-CABLE website", "Later", nullptr,
             ModalCallbackFunction::create ([engineRef] (int ok)

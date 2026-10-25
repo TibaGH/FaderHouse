@@ -1,4 +1,7 @@
 #include "MixerEngine.h"
+#if JUCE_WINDOWS
+ #include "../VirtualMic/WinDefaultDevices.h"
+#endif
 #include "PluginScanner.h"
 
 using namespace juce;
@@ -60,6 +63,22 @@ MixerEngine::~MixerEngine()
 
 void MixerEngine::initialise()
 {
+   #if JUCE_WINDOWS
+    // VB-CABLE carries Mic FX on Windows: keep it from being the default output, and make it
+    // the default microphone once, so Discord / OBS on "Default" get the processed mic.
+    {
+        const bool micDone = settings->getBoolValue ("windowsDefaultMicSet", false);
+        const auto changes = WinDefaultDevices::fixDefaults (! micDone);
+        if (! micDone && WinDefaultDevices::isCableInstalled())
+        {
+            settings->setValue ("windowsDefaultMicSet", true);
+            settings->saveIfNeeded();
+        }
+        if (changes.isNotEmpty())
+            Logger::writeToLog ("Faderhouse: " + changes);
+    }
+   #endif
+
     capture = AppCaptureBackend::create();
 
     auto savedDevice = settings->getXmlValue ("audioDevice");
