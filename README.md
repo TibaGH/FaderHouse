@@ -39,6 +39,10 @@ Both versions have the same mixer, plugin chains, mixes and updates. The differe
 4. **Discord / OBS:** select **Mic FX** (Mac) or **CABLE Output** (Windows) as your microphone, and turn off Discord's own noise suppression, echo cancellation and automatic gain: your plugin chain does that now.
 5. **Assign apps** to channels with the button under each channel name. Drag channels by their header to reorder them.
 
+## Open at login
+
+Settings → About & updates → **Open Faderhouse when you log in** (Mac) / **when you sign in to Windows**. Your routing is then ready right after starting the computer; on Windows Faderhouse starts minimised. If your interface takes a moment to appear after starting up, Faderhouse waits for it (up to 90 seconds) instead of switching to another device.
+
 ## Updates
 
 Faderhouse checks GitHub Releases once a day (and shortly after launch). When a new version is out, an **Update to x.y.z** button appears at the top of the mixer: it downloads the installer for your platform, verifies its SHA-256 checksum, starts it and closes Faderhouse; after installing, Faderhouse opens again. You can also check manually, or turn automatic checks off, in Settings → About & updates.

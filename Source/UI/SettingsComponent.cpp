@@ -1,4 +1,5 @@
 #include "SettingsComponent.h"
+#include "../Platform/LaunchAtLogin.h"
 #include "FaderhouseLookAndFeel.h"
 #include "VirtualMicPanel.h"
 
@@ -269,6 +270,21 @@ struct SettingsComponent::AboutPanel final : public Component
         autoCheck.onClick = [this] { if (updater != nullptr) updater->setAutoCheckEnabled (autoCheck.getToggleState()); };
         addAndMakeVisible (autoCheck);
 
+        openAtLogin.setButtonText ((SystemStats::getOperatingSystemType() & SystemStats::MacOSX) != 0
+                                       ? "Open Faderhouse when you log in"
+                                       : "Open Faderhouse when you sign in to Windows (minimised)");
+        openAtLogin.setTooltip ("So your audio routing is ready right after starting your computer.");
+        openAtLogin.setToggleState (LaunchAtLogin::isEnabled(), dontSendNotification);
+        openAtLogin.setEnabled (LaunchAtLogin::isSupported());
+        openAtLogin.onClick = [this]
+        {
+            const auto note = LaunchAtLogin::setEnabled (openAtLogin.getToggleState());
+            openAtLogin.setToggleState (LaunchAtLogin::isEnabled(), dontSendNotification);
+            if (note.isNotEmpty())
+                AlertWindow::showMessageBoxAsync (MessageBoxIconType::InfoIcon, "Open at login", note);
+        };
+        addAndMakeVisible (openAtLogin);
+
         releases.setButtonText ("Open the releases page");
         releases.setURL (URL ("https://github.com/" + String (Updater::repository) + "/releases"));
         addAndMakeVisible (releases);
@@ -285,19 +301,23 @@ struct SettingsComponent::AboutPanel final : public Component
         area.removeFromTop (10);
         autoCheck.setBounds (area.removeFromTop (24).removeFromLeft (320));
         area.removeFromTop (10);
+        openAtLogin.setBounds (area.removeFromTop (24).removeFromLeft (420));
+        area.removeFromTop (10);
         releases.setBounds (area.removeFromTop (24).removeFromLeft (220));
     }
 
     Updater* updater;
     Label title, info;
     TextButton checkNow;
-    ToggleButton autoCheck;
+    ToggleButton autoCheck, openAtLogin;
     HyperlinkButton releases;
 };
 
 //==============================================================================
 SettingsComponent::SettingsComponent (MixerEngine& e, Updater* updater) : engine (e)
 {
+    engine.stopWaitingForSavedDevice();
+
     auto* selector = new AudioDeviceSelectorComponent (engine.deviceManager,
                                                        1, 64,     // inputs
                                                        2, 64,     // outputs

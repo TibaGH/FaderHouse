@@ -81,11 +81,17 @@ void MixerEngine::initialise()
 
     capture = AppCaptureBackend::create();
 
-    auto savedDevice = settings->getXmlValue ("audioDevice");
-    const auto error = deviceManager.initialise (2, 2, savedDevice.get(), true);
+    savedDeviceState = settings->getXmlValue ("audioDevice");
+    const auto error = deviceManager.initialise (2, 2, savedDeviceState.get(), true);
     if (error.isNotEmpty())
         DBG ("Audio device error: " << error);
     ignoreUnused (error);
+
+    if (savedDeviceState != nullptr && ! isSavedDeviceOpen())
+    {
+        waitForDeviceUntil = Time::getMillisecondCounter() + 90 * 1000;
+        waitForSavedDevice.startTimer (2000);
+    }
 
     if (auto* device = deviceManager.getCurrentAudioDevice())
     {
@@ -790,9 +796,16 @@ void MixerEngine::changeListenerCallback (ChangeBroadcaster* source)
 
     if (source == &deviceManager)
     {
-        if (auto xml = deviceManager.createStateXml())
-            settings->setValue ("audioDevice", xml.get());
-        settings->saveIfNeeded();
+        // While we wait for the saved interface to show up, don't overwrite it with a fallback.
+        if (! waitForSavedDevice.isTimerRunning() || isSavedDeviceOpen())
+        {
+            if (waitForSavedDevice.isTimerRunning())
+                waitForSavedDevice.stopTimer();
+
+            if (auto xml = deviceManager.createStateXml())
+                settings->setValue ("audioDevice", xml.get());
+            settings->saveIfNeeded();
+        }
 
         // Channel names/offsets may have changed.
         for (auto& o : outputs)
@@ -806,4 +819,57 @@ void MixerEngine::changeListenerCallback (ChangeBroadcaster* source)
 void MixerEngine::timerCallback()
 {
     saveSession();
+}
+
+bool MixerEngine::isSavedDeviceOpen() const
+{
+    if (savedDeviceState == nullptr)
+        return true;
+
+    auto* device = deviceManager.getCurrentAudioDevice();
+    if (device == nullptr)
+        return false;
+
+    const auto type = savedDeviceState->getStringAttribute ("deviceType");
+    const auto out = savedDeviceState->getStringAttribute ("audioOutputDeviceName");
+    const auto in = savedDeviceState->getStringAttribute ("audioInputDeviceName");
+    const auto setup = deviceManager.getAudioDeviceSetup();
+
+    return (type.isEmpty() || type == device->getTypeName())
+        && (out.isEmpty() || out == setup.outputDeviceName)
+        && (in.isEmpty() || in == setup.inputDeviceName);
+}
+
+void MixerEngine::retrySavedDevice()
+{
+    if (isSavedDeviceOpen() || (int) (Time::getMillisecondCounter() - waitForDeviceUntil) > 0)
+    {
+        waitForSavedDevice.stopTimer();
+        return;
+    }
+
+    // Is the saved interface there now?
+    const auto typeName = savedDeviceState->getStringAttribute ("deviceType");
+    const auto out = savedDeviceState->getStringAttribute ("audioOutputDeviceName");
+    const auto in = savedDeviceState->getStringAttribute ("audioInputDeviceName");
+
+    for (auto* type : deviceManager.getAvailableDeviceTypes())
+    {
+        if (type->getTypeName() != typeName)
+            continue;
+
+        type->scanForDevices();
+        const bool outThere = out.isEmpty() || type->getDeviceNames (false).contains (out);
+        const bool inThere = in.isEmpty() || type->getDeviceNames (true).contains (in);
+
+        if (outThere && inThere)
+        {
+            deviceManager.initialise (2, 2, savedDeviceState.get(), false);
+            if (isSavedDeviceOpen())
+            {
+                waitForSavedDevice.stopTimer();
+                autoRouteVirtualMic();
+            }
+        }
+    }
 }

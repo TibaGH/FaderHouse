@@ -98,6 +98,9 @@ public:
     ~MixerEngine() override;
 
     void initialise();
+
+    /** The user is choosing a device themselves: stop waiting for the saved one to appear. */
+    void stopWaitingForSavedDevice()   { waitForSavedDevice.stopTimer(); }
     void shutdown();
 
     juce::AudioDeviceManager deviceManager;
@@ -192,6 +195,21 @@ private:
     std::vector<std::unique_ptr<Output>> outputs;
 
     std::unique_ptr<AppCaptureBackend> capture;
+
+    // Right after logging in, a USB/Thunderbolt interface may not be there yet. Then we keep
+    // trying the saved device for a while instead of settling for (and saving) another one.
+    struct WaitForSavedDevice final : public juce::Timer
+    {
+        explicit WaitForSavedDevice (MixerEngine& e) : engine (e) {}
+        void timerCallback() override { engine.retrySavedDevice(); }
+        MixerEngine& engine;
+    };
+    void retrySavedDevice();
+    bool isSavedDeviceOpen() const;
+    WaitForSavedDevice waitForSavedDevice { *this };
+    std::unique_ptr<juce::XmlElement> savedDeviceState;
+    juce::uint32 waitForDeviceUntil = 0;
+
     std::shared_ptr<int> lifetime = std::make_shared<int> (0);   // async callbacks check this is still alive
     MicFxOutput micFx;
     std::atomic<bool> micMuted { false };

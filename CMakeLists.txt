@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 # Core Audio process taps need macOS 14.2 or later.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "14.2" CACHE STRING "Minimum macOS version")
 
-project(Faderhouse VERSION 1.1.1 LANGUAGES C CXX)
+project(Faderhouse VERSION 1.2.0 LANGUAGES C CXX)
 
 if(APPLE)
     enable_language(OBJCXX)
@@ -69,15 +69,17 @@ if(APPLE)
     target_sources(Faderhouse PRIVATE
         Source/Capture/AppCaptureMac.mm
         Source/VirtualMic/VirtualMicInstallerMac.mm
-        Source/UI/AppIconsMac.mm)
-    target_link_libraries(Faderhouse PRIVATE "-framework CoreAudio" "-framework AppKit" "-framework Foundation")
+        Source/UI/AppIconsMac.mm
+        Source/Platform/LaunchAtLoginMac.mm)
+    target_link_libraries(Faderhouse PRIVATE "-framework CoreAudio" "-framework AppKit" "-framework Foundation" "-framework ServiceManagement")
 elseif(WIN32)
     target_sources(Faderhouse PRIVATE
         Source/Capture/AppCaptureWin.cpp
         Source/Capture/WinProcesses.cpp
         Source/VirtualMic/VirtualMicInstallerStub.cpp   # Mic FX goes to VB-CABLE on Windows
         Source/VirtualMic/WinDefaultDevices.cpp
-        Source/UI/AppIconsWin.cpp)
+        Source/UI/AppIconsWin.cpp
+        Source/Platform/LaunchAtLoginWin.cpp)
     target_link_libraries(Faderhouse PRIVATE ole32 version shell32 user32 gdi32 advapi32)
     target_compile_definitions(Faderhouse PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
 
@@ -92,7 +94,8 @@ else()
     target_sources(Faderhouse PRIVATE
         Source/Capture/AppCaptureStub.cpp
         Source/VirtualMic/VirtualMicInstallerStub.cpp
-        Source/UI/AppIconsStub.cpp)
+        Source/UI/AppIconsStub.cpp
+        Source/Platform/LaunchAtLoginStub.cpp)
 endif()
 
 # ---------------------------------------------------------------------------

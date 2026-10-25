@@ -1,6 +1,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "Engine/MixerEngine.h"
 #include "Engine/PluginScanner.h"
+#include "Platform/LaunchAtLogin.h"
 #include "UI/MainComponent.h"
 #include "UI/ChannelStrip.h"
 #include "UI/FaderhouseLookAndFeel.h"
@@ -32,6 +33,10 @@ public:
         engine->initialise();
 
         mainWindow = std::make_unique<MainWindow> (getApplicationName(), *engine);
+
+        // Started by Windows at sign-in: get the routing going, but stay out of the way.
+        if (commandLine.contains (LaunchAtLogin::startupFlag))
+            mainWindow->setMinimised (true);
     }
 
     void shutdown() override

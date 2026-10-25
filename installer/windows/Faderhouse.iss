@@ -74,6 +74,13 @@ Filename: "{app}\Faderhouse.exe"; Description: "{cm:LaunchProgram,Faderhouse}"; 
 Filename: "{app}\Faderhouse.exe"; Flags: nowait skipifnotsilent runasoriginaluser
 
 [Code]
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  // Remove "open at sign-in" (set from Faderhouse's settings) so no broken entry stays behind.
+  if CurUninstallStep = usPostUninstall then
+    RegDeleteValue(HKEY_CURRENT_USER, 'Software\Microsoft\Windows\CurrentVersion\Run', 'Faderhouse');
+end;
+
 var
   CableInstalledAtStart: Boolean;
 
