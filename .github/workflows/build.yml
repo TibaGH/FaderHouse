@@ -44,7 +44,7 @@ jobs:
     needs: version
     # Intel runner that builds for Apple Silicon: GitHub's Apple Silicon runners are often full.
     runs-on: macos-26-intel
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
 
@@ -54,7 +54,7 @@ jobs:
       - name: Build the voice plugins (VST3, go into the .pkg)
         run: |
           cmake -S Plugins -B build-plugins -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
-          cmake --build build-plugins --config Release --parallel
+          cmake --build build-plugins --config Release --parallel "$(sysctl -n hw.ncpu)"
           for p in build-plugins/*_artefacts/Release/VST3/*.vst3; do codesign --force --deep -s - "$p"; done
 
       - name: Make installers
