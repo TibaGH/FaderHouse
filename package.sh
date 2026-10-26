@@ -30,6 +30,17 @@ mkdir -p "$ROOT/Applications" "$ROOT/Library/Audio/Plug-Ins/HAL"
 ditto "$APP" "$ROOT/Applications/Faderhouse.app"
 ditto "$DRIVER" "$ROOT/Library/Audio/Plug-Ins/HAL/FaderhouseMicFX.driver"
 
+# Faderhouse's voice plugins as VST3s for other apps (if they were built: cmake -S Plugins -B build-plugins).
+# Installed by the .pkg they aren't quarantined, so DAWs load them straight away.
+PLUGINS_FOUND=0
+mkdir -p "$ROOT/Library/Audio/Plug-Ins/VST3"
+for p in build-plugins/*_artefacts/Release/VST3/*.vst3; do
+    [ -d "$p" ] || continue
+    ditto "$p" "$ROOT/Library/Audio/Plug-Ins/VST3/$(basename "$p")"
+    PLUGINS_FOUND=$((PLUGINS_FOUND + 1))
+done
+echo "==> $PLUGINS_FOUND voice plugin(s) in the package"
+
 mkdir -p "$WORK/scripts"
 cat > "$WORK/scripts/postinstall" <<'EOF'
 #!/bin/bash
@@ -70,6 +81,7 @@ cat > "$WORK/resources/welcome.html" <<EOF
 <ul>
 <li><b>Faderhouse</b> in your Applications folder</li>
 <li><b>Mic FX</b>, a virtual microphone: choose it as input in Discord / OBS to get your mic with its plugins</li>
+<li><b>Faderhouse voice plugins</b> (Voice, EQ, Compressor, Limiter, Gate, Denoise) as VST3s for your other audio apps. Inside Faderhouse they are built in.</li>
 </ul>
 <p>The macOS audio system restarts once at the end, so sound drops for a moment.</p>
 </body></html>

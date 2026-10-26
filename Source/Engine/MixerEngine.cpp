@@ -1,4 +1,5 @@
 #include "MixerEngine.h"
+#include "BuiltinPlugins.h"
 #if JUCE_WINDOWS
  #include "../VirtualMic/WinDefaultDevices.h"
 #endif
@@ -22,6 +23,7 @@ Source::Source (SourceKind k, const String& n)
 MixerEngine::MixerEngine()
 {
     addDefaultFormatsToManager (formatManager);
+    BuiltinPlugins::addFormat (formatManager);   // Faderhouse Voice, EQ, Compressor... (no scanning needed)
 
     PropertiesFile::Options options;
     options.applicationName = "Faderhouse";

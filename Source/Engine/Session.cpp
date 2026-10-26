@@ -1,6 +1,7 @@
 // Saving / loading the mixer layout (channels, app mappings, faders, plugin chains with their state).
 
 #include "MixerEngine.h"
+#include "BuiltinPlugins.h"
 
 using namespace juce;
 
@@ -275,6 +276,12 @@ void MixerEngine::createDefaultSession()
     {
         mic->toMicFx.store (true);
         mic->icon = "mic";
+
+        // A good-sounding voice out of the box: Faderhouse Voice with its "Natural" preset.
+        String error;
+        if (addPlugin (mic->chain, BuiltinPlugins::getVoiceStrip(), error))
+            if (auto* voice = mic->chain.get (mic->chain.size() - 1))
+                voice->setCurrentProgram (0);
     }
 
    #if JUCE_MAC

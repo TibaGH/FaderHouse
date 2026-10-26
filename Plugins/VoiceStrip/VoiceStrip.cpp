@@ -41,7 +41,7 @@ constexpr int numPresets = (int) (sizeof (presets) / sizeof (presets[0]));
 class Processor final : public fh::PluginBase
 {
 public:
-    Processor() : PluginBase (layout()) {}
+    Processor() : PluginBase (layout(), "Faderhouse Voice", "Voice") {}
 
     int getNumPrograms() override                       { return numPresets; }
     int getCurrentProgram() override                    { return currentPreset; }
@@ -242,4 +242,8 @@ private:
 AudioProcessorEditor* Processor::createEditor() { return new Editor (*this); }
 }
 
-AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return new Processor(); }
+namespace fh::builtin { juce::AudioPluginInstance* createVoice() { return new Processor(); } }
+
+#if FH_BUILD_AS_PLUGIN
+AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return fh::builtin::createVoice(); }
+#endif

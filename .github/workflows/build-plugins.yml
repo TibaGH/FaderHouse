@@ -99,6 +99,9 @@ jobs:
           body: |
             Test builds of the Faderhouse voice plugins (VST3): EQ, Compressor, Limiter, Gate, Denoise and Voice (all in one).
 
+            The easy way: install Faderhouse itself (see the latest normal release). The plugins are built into the app,
+            and its installers also install these VST3s for your other audio apps, no Terminal needed.
+
             **Mac:** unzip and copy the `.vst3` files to `~/Library/Audio/Plug-Ins/VST3/`.
             They are not signed with a paid Apple account; if your host refuses them, run
             `xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/Faderhouse*.vst3` once in Terminal.

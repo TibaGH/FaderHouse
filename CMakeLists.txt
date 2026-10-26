@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 # Core Audio process taps need macOS 14.2 or later.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "14.2" CACHE STRING "Minimum macOS version")
 
-project(Faderhouse VERSION 1.2.0 LANGUAGES C CXX)
+project(Faderhouse VERSION 1.3.0 LANGUAGES C CXX)
 
 if(APPLE)
     enable_language(OBJCXX)
@@ -63,7 +63,31 @@ target_sources(Faderhouse PRIVATE
     Source/UI/MainComponent.cpp
     Source/UI/VirtualMicPanel.cpp
     Source/UI/ConsoleFader.cpp
-    Source/UI/ChannelIcons.cpp)
+    Source/UI/ChannelIcons.cpp
+    Source/Engine/BuiltinPlugins.cpp
+    # Faderhouse's own voice plugins (also built as VST3s from Plugins/)
+    Plugins/Shared/FhUi.cpp
+    Plugins/Shared/FhDenoise.cpp
+    Plugins/EQ/EQ.cpp
+    Plugins/Compressor/Compressor.cpp
+    Plugins/Limiter/Limiter.cpp
+    Plugins/Gate/Gate.cpp
+    Plugins/Denoise/Denoise.cpp
+    Plugins/VoiceStrip/VoiceStrip.cpp)
+
+# RNNoise (BSD-3) for the Denoise plugin, vendored in Plugins/ThirdParty/rnnoise.
+file(GLOB FADERHOUSE_RNNOISE_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Plugins/ThirdParty/rnnoise/src/*.c)
+add_library(faderhouse_rnnoise STATIC ${FADERHOUSE_RNNOISE_SOURCES})
+target_include_directories(faderhouse_rnnoise PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Plugins/ThirdParty/rnnoise/include)
+set_target_properties(faderhouse_rnnoise PROPERTIES C_STANDARD 11 C_EXTENSIONS ON POSITION_INDEPENDENT_CODE ON)
+if(MSVC)
+    target_compile_definitions(faderhouse_rnnoise PRIVATE _USE_MATH_DEFINES _CRT_SECURE_NO_WARNINGS)
+    target_compile_options(faderhouse_rnnoise PRIVATE /W0)
+else()
+    target_compile_options(faderhouse_rnnoise PRIVATE -w)
+endif()
+target_link_libraries(Faderhouse PRIVATE faderhouse_rnnoise)
+target_include_directories(Faderhouse PRIVATE Plugins/Shared)
 
 if(APPLE)
     target_sources(Faderhouse PRIVATE

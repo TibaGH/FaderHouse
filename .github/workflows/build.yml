@@ -9,7 +9,6 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
-    paths-ignore: ["Plugins/**", ".github/workflows/build-plugins.yml"]   # the voice plugins have their own workflow
   workflow_dispatch:
 
 permissions:
@@ -50,6 +49,12 @@ jobs:
 
       - name: Build
         run: ./build.sh Release --no-open
+
+      - name: Build the voice plugins (VST3, go into the .pkg)
+        run: |
+          cmake -S Plugins -B build-plugins -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
+          cmake --build build-plugins --config Release --parallel
+          for p in build-plugins/*_artefacts/Release/VST3/*.vst3; do codesign --force --deep -s - "$p"; done
 
       - name: Make installers
         run: |
@@ -115,6 +120,18 @@ jobs:
           cmake --build build --config Release --parallel
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Build the voice plugins (VST3, go into the installer)
+        shell: pwsh
+        run: |
+          cmake -S Plugins -B build-plugins -A x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build-plugins --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force plugins-out | Out-Null
+          Get-ChildItem build-plugins -Recurse -Directory -Filter *.vst3 | Where-Object { $_.FullName -match "Release\\VST3\\[^\\]+\.vst3$" } | ForEach-Object { Copy-Item $_.FullName plugins-out -Recurse -Force }
+          Get-ChildItem plugins-out
+          "PLUGINS_DIR=$((Resolve-Path plugins-out).Path)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
       - name: Make installer
         shell: pwsh
         run: |
@@ -127,7 +144,7 @@ jobs:
           $exe = Resolve-Path "build\Faderhouse_artefacts\Release\Faderhouse.exe"
           $dist = Join-Path $PWD "dist"
           New-Item -ItemType Directory -Force $dist | Out-Null
-          & $isccPath "/DAppVersion=${{ needs.version.outputs.version }}" "/DSourceExe=$exe" "/DOutputDir=$dist" "/DCableDir=$env:CABLE_DIR" installer\windows\Faderhouse.iss
+          & $isccPath "/DAppVersion=${{ needs.version.outputs.version }}" "/DSourceExe=$exe" "/DOutputDir=$dist" "/DCableDir=$env:CABLE_DIR" "/DPluginsDir=$env:PLUGINS_DIR" installer\windows\Faderhouse.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Get-ChildItem $dist
 

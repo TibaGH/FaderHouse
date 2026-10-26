@@ -18,6 +18,10 @@
 #ifndef CableDir
   #define CableDir ""
 #endif
+; Faderhouse voice plugins (VST3) for other audio apps. Optional.
+#ifndef PluginsDir
+  #define PluginsDir ""
+#endif
 
 [Setup]
 AppId={{96CC0BC9-6483-4578-B3FB-1B4558EDA075}
@@ -51,12 +55,19 @@ RestartApplications=no
 #if CableDir != ""
 Name: "vbcable"; Description: "Install VB-CABLE for Mic FX (your processed mic for Discord / OBS). VB-CABLE is made by VB-Audio (www.vb-cable.com) and is donationware: all participations are welcome."; Check: not CableAlreadyInstalled
 #endif
+#if PluginsDir != ""
+Name: "vst3"; Description: "Install the Faderhouse voice plugins (VST3) for your other audio apps. Inside Faderhouse they are built in."
+#endif
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
 Source: "{#SourceExe}"; DestDir: "{app}"; Flags: ignoreversion
 #if CableDir != ""
 Source: "{#CableDir}\*"; DestDir: "{app}\VB-CABLE"; Flags: ignoreversion recursesubdirs createallsubdirs
+#endif
+
+#if PluginsDir != ""
+Source: "{#PluginsDir}\*"; DestDir: "{commoncf64}\VST3"; Flags: ignoreversion recursesubdirs createallsubdirs; Tasks: vst3
 #endif
 
 [Icons]

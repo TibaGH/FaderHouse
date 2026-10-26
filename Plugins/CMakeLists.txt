@@ -11,7 +11,7 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Mac architectures")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-project(FaderhousePlugins VERSION 0.1.1 LANGUAGES C CXX)
+project(FaderhousePlugins VERSION 0.1.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -46,7 +46,7 @@ endif()
 function(faderhouse_plugin target name code category source)
     juce_add_plugin(${target}
         PRODUCT_NAME "${name}"
-        COMPANY_NAME "Balogh Productions"
+        COMPANY_NAME "Faderhouse"
         COMPANY_WEBSITE "https://github.com/TibaGH/faderhouse"
         BUNDLE_ID "com.baloghproductions.faderhouse.${target}"
         PLUGIN_MANUFACTURER_CODE Fdhs
@@ -67,7 +67,8 @@ function(faderhouse_plugin target name code category source)
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        JUCE_DISPLAY_SPLASH_SCREEN=0)
+        JUCE_DISPLAY_SPLASH_SCREEN=0
+        FH_BUILD_AS_PLUGIN=1)
     target_link_libraries(${target}
         PRIVATE
             faderhouse_rnnoise
@@ -75,8 +76,7 @@ function(faderhouse_plugin target name code category source)
             juce::juce_dsp
         PUBLIC
             juce::juce_recommended_config_flags
-            juce::juce_recommended_lto_flags
-            juce::juce_recommended_warning_flags)
+            juce::juce_recommended_warning_flags)   # no LTO: builds much faster, these are light
 endfunction()
 
 faderhouse_plugin(FaderhouseEQ         "Faderhouse EQ"         FhEq "Fx;EQ"          ${CMAKE_CURRENT_SOURCE_DIR}/EQ/EQ.cpp)

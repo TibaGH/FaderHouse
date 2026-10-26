@@ -42,15 +42,40 @@ inline std::unique_ptr<juce::AudioParameterChoice> choiceParam (const juce::Stri
     return std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { id, 1 }, name, choices, def);
 }
 
-/** Base for every Faderhouse plugin. */
-class PluginBase : public juce::AudioProcessor
+/** Base for every Faderhouse plugin. An AudioPluginInstance, so the same class runs as a
+    VST3 and as a built-in plugin inside the Faderhouse app. */
+class PluginBase : public juce::AudioPluginInstance
 {
 public:
-    PluginBase (juce::AudioProcessorValueTreeState::ParameterLayout layout)
-        : AudioProcessor (BusesProperties().withInput ("Input", juce::AudioChannelSet::stereo(), true)
-                                           .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-          state (*this, nullptr, "FaderhouseState", std::move (layout))
+    static constexpr const char* formatName = "Faderhouse";
+    static constexpr const char* manufacturer = "Faderhouse";
+    static constexpr const char* version = "1.0";
+
+    PluginBase (juce::AudioProcessorValueTreeState::ParameterLayout layout, const juce::String& pluginName,
+                const juce::String& pluginCategory)
+        : AudioPluginInstance (BusesProperties().withInput ("Input", juce::AudioChannelSet::stereo(), true)
+                                                .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+          state (*this, nullptr, "FaderhouseState", std::move (layout)),
+          name (pluginName), category (pluginCategory)
     {}
+
+    /** Description used for built-in plugins (format "Faderhouse", identifier = name). */
+    static juce::PluginDescription describe (const juce::String& pluginName, const juce::String& pluginCategory)
+    {
+        juce::PluginDescription d;
+        d.name = d.descriptiveName = pluginName;
+        d.pluginFormatName = formatName;
+        d.category = pluginCategory;
+        d.manufacturerName = manufacturer;
+        d.version = version;
+        d.fileOrIdentifier = pluginName;
+        d.uniqueId = d.deprecatedUid = pluginName.hashCode();
+        d.isInstrument = false;
+        d.numInputChannels = d.numOutputChannels = 2;
+        return d;
+    }
+
+    void fillInPluginDescription (juce::PluginDescription& d) const override { d = describe (name, category); }
 
     using juce::AudioProcessor::processBlock;
 
@@ -62,7 +87,7 @@ public:
             && layouts.getMainInputChannelSet() == out;
     }
 
-    const juce::String getName() const override             { return JucePlugin_Name; }
+    const juce::String getName() const override             { return name; }
     bool acceptsMidi() const override                        { return false; }
     bool producesMidi() const override                       { return false; }
     double getTailLengthSeconds() const override             { return 0.0; }
@@ -100,5 +125,8 @@ public:
 
     juce::AudioProcessorValueTreeState state;
     LevelMeter inputMeter, outputMeter;
+
+private:
+    juce::String name, category;
 };
 }

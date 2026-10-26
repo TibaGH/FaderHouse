@@ -23,7 +23,7 @@ APVTS::ParameterLayout layout()
 class Processor final : public fh::PluginBase
 {
 public:
-    Processor() : PluginBase (layout()) {}
+    Processor() : PluginBase (layout(), "Faderhouse Compressor", "Dynamics") {}
 
     void prepareToPlay (double sr, int) override { update(); comp.prepare (sr); }
 
@@ -149,4 +149,8 @@ private:
 AudioProcessorEditor* Processor::createEditor() { return new Editor (*this); }
 }
 
-AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return new Processor(); }
+namespace fh::builtin { juce::AudioPluginInstance* createCompressor() { return new Processor(); } }
+
+#if FH_BUILD_AS_PLUGIN
+AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return fh::builtin::createCompressor(); }
+#endif

@@ -39,6 +39,21 @@ Both versions have the same mixer, plugin chains, mixes and updates. The differe
 4. **Discord / OBS:** select **Mic FX** (Mac) or **CABLE Output** (Windows) as your microphone, and turn off Discord's own noise suppression, echo cancellation and automatic gain: your plugin chain does that now.
 5. **Assign apps** to channels with the button under each channel name. Drag channels by their header to reorder them.
 
+## Voice plugins
+
+Faderhouse comes with its own voice plugins, so you sound good without owning any plugins or knowing audio jargon. Click **+ FX** on a channel; they're at the top of the list, under *Faderhouse*:
+
+| Plugin | What it does |
+|---|---|
+| **Voice** | Everything below in one simple strip, with presets (Natural, Headset mic, USB mic, Broadcast, Noisy room...). New sessions put it on your mic. |
+| **EQ** | 5-band EQ with low and high cut, and a live spectrum of your voice. Drag the points. |
+| **Compressor** | *Smart*: one Amount knob, make-up gain is automatic. *Leveler*: an automatic fader that brings you to a target level. |
+| **Limiter** | Peaks never above -1 dB; *Push* makes you a little louder and more even. |
+| **Gate** | Turns your mic down between sentences (keyboard, room). |
+| **Denoise** | Removes background noise with [RNNoise](https://github.com/xiph/rnnoise) (Xiph.Org, BSD licence). |
+
+The installers also put them in your system as **VST3s** for your other audio apps (on Windows: a tick box in the installer). Separate test builds of the plugins are on the [Releases](https://github.com/TibaGH/faderhouse/releases) page as *plugins-v...*.
+
 ## Open at login
 
 Settings → About & updates → **Open Faderhouse when you log in** (Mac) / **when you sign in to Windows**. Your routing is then ready right after starting the computer; on Windows Faderhouse starts minimised. If your interface takes a moment to appear after starting up, Faderhouse waits for it (up to 90 seconds) instead of switching to another device.
@@ -118,6 +133,7 @@ The GitHub workflow does all of this for both platforms on every push.
 |---|---|
 | `Source/Engine/` | Mixer engine, clock bridge, plugin chains, extra outputs, session |
 | `Source/Capture/` | Per-app capture (macOS: Core Audio process taps; Windows: WASAPI process loopback) |
+| `Plugins/` | Faderhouse's voice plugins (DSP, UI, RNNoise); built into the app and as VST3s |
 | `Source/VirtualMic/` | The Mic FX driver for macOS (Core Audio HAL plug-in via libASPL) and its installer |
 | `Source/UI/` | Interface: console faders, keys, icons, strips, settings, logo |
 | `Resources/` | App icon and DMG background (made with `Tools/IconRender`) |

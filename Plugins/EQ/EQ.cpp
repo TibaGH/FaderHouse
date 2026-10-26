@@ -78,7 +78,7 @@ struct SpectrumTap
 class Processor final : public fh::PluginBase
 {
 public:
-    Processor() : PluginBase (layout())
+    Processor() : PluginBase (layout(), "Faderhouse EQ", "EQ")
     {
         auto get = [this] (const String& id) { return state.getRawParameterValue (id); };
         hpOn = get ("hp_on"); hpFreq = get ("hp_freq"); hpSlope = get ("hp_slope");
@@ -559,4 +559,8 @@ private:
 AudioProcessorEditor* Processor::createEditor() { return new Editor (*this); }
 }
 
-AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return new Processor(); }
+namespace fh::builtin { juce::AudioPluginInstance* createEQ() { return new Processor(); } }
+
+#if FH_BUILD_AS_PLUGIN
+AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return fh::builtin::createEQ(); }
+#endif

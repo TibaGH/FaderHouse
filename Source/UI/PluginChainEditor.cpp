@@ -1,4 +1,5 @@
 #include "PluginChainEditor.h"
+#include "../Engine/BuiltinPlugins.h"
 
 using namespace juce;
 
@@ -96,22 +97,32 @@ void PluginChainEditor::openEditor (int index)
 void PluginChainEditor::showAddMenu()
 {
     PopupMenu menu;
+    const auto builtins = BuiltinPlugins::getTypes();
     const auto types = engine.knownPlugins.getTypes();
+    constexpr int builtinBase = 0x7f000000;   // far away from KnownPluginList's menu ids
 
+    // Faderhouse's own plugins first: always there, no scanning needed.
+    menu.addSectionHeader ("Faderhouse");
+    for (int i = 0; i < builtins.size(); ++i)
+        menu.addItem (builtinBase + i, builtins[i].name.fromFirstOccurrenceOf ("Faderhouse ", false, false)
+                                         + (i == 0 ? "  (all-in-one voice strip)" : String()));
+
+    menu.addSeparator();
     if (types.isEmpty())
     {
-        menu.addItem ("No plugins scanned yet - scan now...", [this] { if (onScanRequested) onScanRequested(); });
-        menu.showMenuAsync (PopupMenu::Options().withTargetComponent (addButton));
-        return;
+        menu.addItem (-1, "Your plugins: none scanned yet - scan now...");
     }
-
-    KnownPluginList::addToMenu (menu, types, KnownPluginList::sortByManufacturer);
-    menu.addSeparator();
-    menu.addItem (-1, "Scan for new plugins...");
+    else
+    {
+        menu.addSectionHeader ("Your plugins");
+        KnownPluginList::addToMenu (menu, types, KnownPluginList::sortByManufacturer);
+        menu.addSeparator();
+        menu.addItem (-1, "Scan for new plugins...");
+    }
 
     SafePointer<PluginChainEditor> safe (this);
     menu.showMenuAsync (PopupMenu::Options().withTargetComponent (addButton),
-                        [safe, types] (int result)
+                        [safe, types, builtins] (int result)
     {
         if (safe == nullptr || result == 0)
             return;
@@ -122,12 +133,21 @@ void PluginChainEditor::showAddMenu()
             return;
         }
 
-        const int index = KnownPluginList::getIndexChosenByMenu (types, result);
-        if (! isPositiveAndBelow (index, types.size()))
-            return;
+        PluginDescription chosen;
+        if (result >= builtinBase && result < builtinBase + builtins.size())
+        {
+            chosen = builtins[result - builtinBase];
+        }
+        else
+        {
+            const int index = KnownPluginList::getIndexChosenByMenu (types, result);
+            if (! isPositiveAndBelow (index, types.size()))
+                return;
+            chosen = types.getReference (index);
+        }
 
         String error;
-        if (! safe->engine.addPlugin (safe->chain, types.getReference (index), error))
+        if (! safe->engine.addPlugin (safe->chain, chosen, error))
         {
             AlertWindow::showMessageBoxAsync (MessageBoxIconType::WarningIcon, "Could not load plugin", error);
             return;
