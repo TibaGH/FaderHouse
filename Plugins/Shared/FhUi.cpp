@@ -335,6 +335,9 @@ EditorBase::EditorBase (PluginBase& p, const String& t, const String& s)
 
 EditorBase::~EditorBase()
 {
+    // Whoever deletes us, the plugin must know its editor is gone; otherwise it refuses to
+    // make a new one next time and the host shows a plain slider view instead.
+    base.editorBeingDeleted (this);
     setLookAndFeel (nullptr);
 }
 

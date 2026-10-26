@@ -39,6 +39,19 @@ public:
         }
 
         pending.erase (&processor);
+
+        // Still an editor around that isn't in one of our windows? If it sits in some other
+        // window, bring that one up; if it's loose, the new window adopts it (see Window).
+        if (auto* existing = processor.hasEditor() ? processor.getActiveEditor() : nullptr)
+        {
+            if (auto* top = existing->getTopLevelComponent(); top != nullptr && top != existing)
+            {
+                top->setVisible (true);
+                top->toFront (true);
+                return;
+            }
+        }
+
         windows.add (new Window (processor, context, *this));
     }
 
@@ -61,7 +74,31 @@ private:
         {
             setUsingNativeTitleBar (true);
 
-            juce::AudioProcessorEditor* editor = p.hasEditor() ? p.createEditorAndMakeActive() : nullptr;
+            juce::AudioProcessorEditor* editor = nullptr;
+            if (p.hasEditor())
+            {
+                // A loose editor that was never cleaned up: use it rather than falling back to sliders.
+                if (auto* loose = p.getActiveEditor(); loose != nullptr && loose->getParentComponent() == nullptr)
+                {
+                    if (loose->isOnDesktop())
+                        loose->removeFromDesktop();
+                    editor = loose;
+                }
+                else
+                {
+                    editor = p.createEditorAndMakeActive();
+                }
+            }
+
+            // Still no editor because the plugin thinks an old, invisible one is open: forget that
+            // one (it isn't on screen anywhere) and ask again, rather than showing plain sliders.
+            if (editor == nullptr && p.hasEditor())
+                if (auto* stale = p.getActiveEditor(); stale != nullptr && ! stale->isShowing())
+                {
+                    p.editorBeingDeleted (stale);
+                    editor = p.createEditorAndMakeActive();
+                }
+
             if (editor == nullptr)
                 editor = new juce::GenericAudioProcessorEditor (p);
 
