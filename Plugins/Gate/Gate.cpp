@@ -76,6 +76,7 @@ public:
         controlsArea = r;
         auto c = controlsArea.reduced (14, 12);
         hint.setBounds (c.removeFromBottom (40));
+        c.removeFromBottom (8);
         const int w = c.getWidth() / 2;
         threshold.setBounds (c.removeFromLeft (w).reduced (4));
         range.setBounds (c.reduced (4));

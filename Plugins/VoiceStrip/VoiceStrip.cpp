@@ -150,7 +150,7 @@ public:
         for (int i = 0; i < numPresets; ++i)
             presetBox.addItem (presets[i].name, i + 1);
         presetBox.setTextWhenNothingSelected ("Choose a preset...");
-        presetBox.setSelectedId (0, dontSendNotification);
+        presetBox.setSelectedId (proc.currentPreset + 1, dontSendNotification);
         presetBox.onChange = [this]
         {
             const int i = presetBox.getSelectedId() - 1;

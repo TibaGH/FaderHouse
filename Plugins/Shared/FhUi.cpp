@@ -106,6 +106,9 @@ Label* Look::createSliderTextBox (Slider& s)
     l->setFont (FontOptions (12.0f));
     l->setColour (Label::textColourId, Colours::textDim);
     l->setColour (Label::outlineWhenEditingColourId, Colours::accent);
+    l->setColour (Label::outlineColourId, juce::Colours::transparentBlack);
+    l->setColour (Label::backgroundColourId, juce::Colours::transparentBlack);
+    l->setFont (FontOptions (12.5f));
     l->setJustificationType (Justification::centred);
     return l;
 }
@@ -116,6 +119,9 @@ Knob::Knob (PluginBase& p, const String& paramId, const String& name, Colour col
     slider.setSliderStyle (Slider::RotaryHorizontalVerticalDrag);
     slider.setTextBoxStyle (Slider::TextBoxBelow, false, 80, 16);
     slider.setColour (Slider::rotarySliderFillColourId, colour);
+    slider.setColour (Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+    slider.setColour (Slider::textBoxBackgroundColourId, juce::Colours::transparentBlack);
+    slider.setColour (Slider::textBoxTextColourId, Colours::textDim);
     slider.setRotaryParameters (MathConstants<float>::pi * 1.25f, MathConstants<float>::pi * 2.75f, true);
     slider.setVelocityBasedMode (false);
     slider.setMouseDragSensitivity (220);
@@ -136,9 +142,13 @@ Knob::Knob (PluginBase& p, const String& paramId, const String& name, Colour col
 
 void Knob::resized()
 {
+    // Keep name, knob and value together, centred in whatever space we get.
     auto r = getLocalBounds();
-    label.setBounds (r.removeFromTop (18));
-    slider.setBounds (r);
+    const int knob = jmin (r.getWidth(), r.getHeight() - 18 - 18);
+    const int total = 18 + knob + 18;
+    auto block = r.withSizeKeepingCentre (r.getWidth(), jmin (r.getHeight(), total));
+    label.setBounds (block.removeFromTop (18));
+    slider.setBounds (block);
 }
 
 //==============================================================================

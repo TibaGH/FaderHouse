@@ -97,6 +97,7 @@ public:
         mode.setBounds (c.removeFromTop (28));
         c.removeFromTop (10);
         hint.setBounds (c.removeFromBottom (40));
+        c.removeFromBottom (8);
         auto knobs = c;
         const bool leveler = proc.choice ("mode") == 1;
         if (leveler)

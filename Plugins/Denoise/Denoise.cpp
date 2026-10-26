@@ -77,6 +77,7 @@ public:
         auto c = controlsArea.reduced (14, 12);
         voice.setBounds (c.removeFromTop (22));
         hint.setBounds (c.removeFromBottom (40));
+        c.removeFromBottom (8);
         amount.setBounds (c.reduced (4));
 
         auto m = metersArea.reduced (10, 12);

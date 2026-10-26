@@ -189,7 +189,9 @@ public:
             g.fillPath (area);
         }
 
-        // Total curve.
+        // Total curve (clipped to the plot).
+        Graphics::ScopedSaveState clip (g);
+        g.reduceClipRegion (plot.toNearestInt());
         Path curve;
         for (float x = plot.getX(); x <= plot.getRight(); x += 1.5f)
         {

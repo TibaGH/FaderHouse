@@ -80,6 +80,7 @@ public:
         controlsArea = r;
         auto c = controlsArea.reduced (14, 12);
         hint.setBounds (c.removeFromBottom (40));
+        c.removeFromBottom (8);
         ceiling.setBounds (c.removeFromRight (c.getWidth() / 3).reduced (2, 30));
         push.setBounds (c.reduced (4));
 
