@@ -44,6 +44,9 @@ public:
     /** One line for the status bar, e.g. "3 apps captured" or an error. */
     virtual juce::String getStatusText() const = 0;
 
+    /** A problem the user has to act on (e.g. "you hear apps twice"), or {}. Shown as a pop-up once. */
+    virtual juce::String getWarning() const { return {}; }
+
     /** Running audio clients, for the "assign apps" picker. Message thread. */
     virtual std::vector<AudioProcessInfo> listAudioProcesses() = 0;
 

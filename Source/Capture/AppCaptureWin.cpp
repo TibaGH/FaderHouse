@@ -522,7 +522,11 @@ public:
         // Keep it muted while we mix (otherwise you'd hear every app twice).
         if (! getMute (current.p))
             setMute (current.p, true);
+
+        muteFailed = ! getMute (current.p);
     }
+
+    bool didMuteFail() const noexcept { return muteFailed; }
 
     void release (IMMDeviceEnumerator* enumerator)
     {
@@ -534,6 +538,7 @@ public:
             setMute (device.p, false);
 
         mutedId = {};
+        muteFailed = false;
         stateFile().deleteFile();
     }
 
@@ -557,6 +562,7 @@ private:
     }
 
     String mutedId;
+    bool muteFailed = false;
 };
 
 //==============================================================================
@@ -583,6 +589,12 @@ public:
     }
 
     bool isSupported() const override { return supported; }
+
+    String getWarning() const override
+    {
+        const std::lock_guard<std::mutex> l (statusLock);
+        return warning;
+    }
 
     String getStatusText() const override
     {
@@ -1031,6 +1043,22 @@ private:
         String text;
         text << (int) capturing.size() << (capturing.size() == 1 ? " app captured" : " apps captured");
 
+        String warn;
+        if (muter.isMuting() && muter.didMuteFail())
+            warn = "Faderhouse could not mute the Windows output \"" + defaultName + "\", so you may hear your apps twice "
+                   "(once directly, once through Faderhouse, a little later).\n\nMute it yourself in the Windows volume "
+                   "controls, or set Windows' output to a device you don't listen to.";
+        else if (hasRoutes && ! playsElsewhere && ! defaultIsVirtualMic && defaultName.isNotEmpty())
+            warn = "Windows plays every app directly on \"" + defaultName + "\", and Faderhouse plays them on the same "
+                   "device too. So you hear your apps twice, the second time a little later.\n\nFix it in one of two ways:\n"
+                   "  - In Faderhouse Settings > Audio interface, choose the ASIO driver of your interface "
+                   "(Faderhouse then mutes the Windows output for you), or\n"
+                   "  - In Windows' sound settings, set the output to a device you don't listen to.";
+        {
+            const std::lock_guard<std::mutex> l (statusLock);
+            warning = warn;
+        }
+
         if (muter.isMuting())
             text << " - Windows output \"" << defaultName << "\" muted, apps play through Faderhouse";
         else if (hasRoutes && ! playsElsewhere)
@@ -1073,7 +1101,7 @@ private:
     HRESULT lastError = S_OK;
 
     mutable std::mutex statusLock;
-    String status { "Starting per-app capture..." };
+    String status { "Starting per-app capture..." }, warning;
 };
 }
 

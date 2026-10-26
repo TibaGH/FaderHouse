@@ -41,6 +41,7 @@ private:
     void updateMixTabs();
     void showAddChannelMenu();
     void openSettings (int tab = 0);
+    juce::String shownCaptureWarning;
     void openPluginScanner();
     void layoutStrips();
     juce::Rectangle<int> slotBounds (int index) const;

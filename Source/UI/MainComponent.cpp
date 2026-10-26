@@ -466,6 +466,22 @@ void MainComponent::timerCallback()
     status << "      |      " << engine.getCaptureStatus();
     statusLabel.setText (status, dontSendNotification);
 
+    // Something the user has to fix (e.g. hearing apps twice on Windows): tell them once.
+    const auto warning = engine.getCaptureWarning();
+    statusLabel.setColour (Label::textColourId, warning.isNotEmpty() ? Theme::mute : Theme::textDim);
+    if (warning.isNotEmpty() && warning != shownCaptureWarning)
+    {
+        shownCaptureWarning = warning;
+        SafePointer<MainComponent> safe (this);
+        AlertWindow::showOkCancelBox (MessageBoxIconType::WarningIcon, "You may hear your apps twice", warning,
+                                      "Open Settings", "Later", nullptr,
+                                      ModalCallbackFunction::create ([safe] (int ok) { if (ok && safe != nullptr) safe->openSettings (0); }));
+    }
+    else if (warning.isEmpty())
+    {
+        shownCaptureWarning = {};
+    }
+
     for (auto* s : outputStrips)
         s->refreshRouting();
     if (micFxStrip != nullptr)

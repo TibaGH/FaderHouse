@@ -143,6 +143,7 @@ public:
     // ---- capture ----
     std::vector<AudioProcessInfo> listAudioProcesses();
     juce::String getCaptureStatus() const;
+    juce::String getCaptureWarning() const;
     bool isCaptureSupported() const;
 
     // ---- misc ----

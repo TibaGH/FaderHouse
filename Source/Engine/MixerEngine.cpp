@@ -703,6 +703,11 @@ String MixerEngine::getCaptureStatus() const
     return capture != nullptr ? capture->getStatusText() : String();
 }
 
+String MixerEngine::getCaptureWarning() const
+{
+    return capture != nullptr ? capture->getWarning() : String();
+}
+
 bool MixerEngine::isCaptureSupported() const
 {
     return capture != nullptr && capture->isSupported();
