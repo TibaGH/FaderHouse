@@ -33,7 +33,7 @@ jobs:
 
   macos:
     needs: version
-    runs-on: macos-15
+    runs-on: macos-26-intel   # GitHub's Apple Silicon runners are often full; this builds universal anyway
     timeout-minutes: 150   # universal (arm64 + x86_64) builds with link-time optimisation take a while
     steps:
       - uses: actions/checkout@v7

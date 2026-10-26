@@ -42,7 +42,8 @@ jobs:
 
   macos:
     needs: version
-    runs-on: macos-26
+    # Intel runner that builds for Apple Silicon: GitHub's Apple Silicon runners are often full.
+    runs-on: macos-26-intel
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7

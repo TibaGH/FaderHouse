@@ -56,7 +56,8 @@ echo "==> Using $("$CMAKE" --version | head -1)"
 
 # --- 3. configure + build ------------------------------------------------------
 # The first run downloads JUCE and libASPL into build/_deps (a few minutes).
-"$CMAKE" -S . -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE="$CONFIG"
+# Always Apple Silicon (Faderhouse needs it), also when built on an Intel Mac / CI runner.
+"$CMAKE" -S . -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE="$CONFIG" -DCMAKE_OSX_ARCHITECTURES="${FADERHOUSE_ARCHS:-arm64}"
 "$CMAKE" --build build --parallel "$(sysctl -n hw.ncpu)"
 
 APP="build/Faderhouse_artefacts/$CONFIG/Faderhouse.app"
