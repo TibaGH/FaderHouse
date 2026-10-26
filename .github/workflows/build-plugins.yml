@@ -1,0 +1,108 @@
+name: Build voice plugins
+
+# Builds the Faderhouse voice plugins (VST3) for macOS and Windows. They are test builds:
+# each run uploads them as artifacts, and a new version in Plugins/CMakeLists.txt is
+# published as a pre-release "plugins-vX.Y.Z" (pre-releases don't trigger the app updater).
+
+on:
+  push:
+    branches: [main]
+    paths: ["Plugins/**", ".github/workflows/build-plugins.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      publish: ${{ steps.v.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: v
+        run: |
+          V=$(sed -n 's/^project(FaderhousePlugins VERSION \([0-9.]*\).*/\1/p' Plugins/CMakeLists.txt)
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF}" = "refs/heads/main" ] && ! git ls-remote --exit-code --tags origin "refs/tags/plugins-v$V" >/dev/null; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  macos:
+    needs: version
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build
+        run: |
+          cmake -S Plugins -B build-plugins -G Xcode
+          cmake --build build-plugins --config Release -- -quiet
+      - name: Sign (ad hoc) and zip
+        run: |
+          mkdir -p dist/VST3
+          find build-plugins -path "*Release/VST3/*.vst3" -maxdepth 4 -type d -exec cp -R {} dist/VST3/ \;
+          for p in dist/VST3/*.vst3; do codesign --force --deep -s - "$p"; done
+          ls dist/VST3
+          cd dist && ditto -c -k --keepParent VST3 "Faderhouse-Plugins-${{ needs.version.outputs.version }}-macOS.zip"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Faderhouse-Plugins-macOS
+          path: dist/*.zip
+          if-no-files-found: error
+
+  windows:
+    needs: version
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build
+        shell: pwsh
+        run: |
+          cmake -S Plugins -B build-plugins -A x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build-plugins --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist\VST3 | Out-Null
+          Get-ChildItem build-plugins -Recurse -Directory -Filter *.vst3 | Where-Object { $_.FullName -match "Release\\VST3\\[^\\]+\.vst3$" } | ForEach-Object { Copy-Item $_.FullName dist\VST3 -Recurse -Force }
+          Get-ChildItem dist\VST3
+          Compress-Archive -Path dist\VST3 -DestinationPath "dist\Faderhouse-Plugins-${{ needs.version.outputs.version }}-Windows.zip"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Faderhouse-Plugins-Windows
+          path: dist/*.zip
+          if-no-files-found: error
+
+  release:
+    needs: [version, macos, windows]
+    if: needs.version.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v3
+        with:
+          tag_name: plugins-v${{ needs.version.outputs.version }}
+          name: Faderhouse voice plugins ${{ needs.version.outputs.version }} (test)
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: dist/*
+          body: |
+            Test builds of the Faderhouse voice plugins (VST3): EQ, Compressor, Limiter, Gate, Denoise and Voice (all in one).
+
+            **Mac:** unzip and copy the `.vst3` files to `~/Library/Audio/Plug-Ins/VST3/`.
+            They are not signed with a paid Apple account; if your host refuses them, run
+            `xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/Faderhouse*.vst3` once in Terminal.
+
+            **Windows:** unzip and copy the `.vst3` folders to `C:\Program Files\Common Files\VST3\`.
+
+            Noise reduction uses [RNNoise](https://github.com/xiph/rnnoise) (Xiph.Org, BSD licence).

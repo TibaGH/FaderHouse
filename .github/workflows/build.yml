@@ -9,6 +9,7 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+    paths-ignore: ["Plugins/**", ".github/workflows/build-plugins.yml"]   # the voice plugins have their own workflow
   workflow_dispatch:
 
 permissions:
