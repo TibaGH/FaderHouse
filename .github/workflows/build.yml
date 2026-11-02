@@ -44,7 +44,11 @@ jobs:
     needs: version
     # Intel runner that builds for Apple Silicon: GitHub's Apple Silicon runners are often full.
     runs-on: macos-26-intel
-    timeout-minutes: 120
+    timeout-minutes: 150
+    env:
+      # Signing + notarization run only when the repo has the Apple secrets
+      # (MACOS_CERTIFICATE_P12 etc., see README "Building"). Without them: ad-hoc build as before.
+      HAS_SIGNING: ${{ secrets.MACOS_CERTIFICATE_P12 != '' && secrets.NOTARY_API_KEY_P8 != '' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -57,10 +61,93 @@ jobs:
           cmake --build build-plugins --config Release --parallel "$(sysctl -n hw.ncpu)"
           for p in build-plugins/*_artefacts/Release/VST3/*.vst3; do codesign --force --deep -s - "$p"; done
 
+      - name: Import the Developer ID certificates
+        if: env.HAS_SIGNING == 'true'
+        env:
+          P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+
+          # Apple's Developer ID intermediate certificate, so the chain is complete on the runner.
+          curl -fsSL -o "$RUNNER_TEMP/DeveloperIDG2CA.cer" https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer
+          security import "$RUNNER_TEMP/DeveloperIDG2CA.cer" -k "$KEYCHAIN" || true
+
+          echo "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$P12_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/productbuild -T /usr/bin/productsign -T /usr/bin/security
+          rm -f "$RUNNER_TEMP/cert.p12"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+
+          echo "Identities in the signing keychain:"
+          security find-identity -v "$KEYCHAIN"
+          identity() {  # full certificate name, e.g. Developer ID Application: Tim Balogh (TEAMID)
+            security find-identity -v "$KEYCHAIN" | grep "$1: .*($TEAM_ID)\"" | head -1 | sed -E 's/^[^"]*"(.*)"$/\1/'
+          }
+          SIGN_APP="$(identity "Developer ID Application")"
+          SIGN_INSTALLER="$(identity "Developer ID Installer")"
+          [ -n "$SIGN_APP" ] || { echo "::error::No 'Developer ID Application' certificate for team $TEAM_ID in the .p12"; exit 1; }
+          [ -n "$SIGN_INSTALLER" ] || { echo "::error::No 'Developer ID Installer' certificate for team $TEAM_ID in the .p12"; exit 1; }
+          echo "App identity:       $SIGN_APP"
+          echo "Installer identity: $SIGN_INSTALLER"
+
+          {
+            echo "FADERHOUSE_KEYCHAIN=$KEYCHAIN"
+            echo "FADERHOUSE_SIGN_APP=$SIGN_APP"
+            echo "FADERHOUSE_SIGN_INSTALLER=$SIGN_INSTALLER"
+          } >> "$GITHUB_ENV"
+
       - name: Make installers
         run: |
           python3 -m pip install --user --break-system-packages dmgbuild || python3 -m pip install --user dmgbuild
           ./package.sh
+
+      - name: Notarize and staple
+        if: env.HAS_SIGNING == 'true'
+        env:
+          NOTARY_KEY_BASE64: ${{ secrets.NOTARY_API_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_API_KEY_ID }}
+          NOTARY_ISSUER: ${{ secrets.NOTARY_API_ISSUER_ID }}
+        run: |
+          KEY="$RUNNER_TEMP/AuthKey.p8"
+          echo "$NOTARY_KEY_BASE64" | base64 --decode > "$KEY"
+          AUTH=(--key "$KEY" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER")
+
+          for f in dist/*.pkg dist/*.dmg; do
+            echo "==> Notarizing $f"
+            xcrun notarytool submit "$f" "${AUTH[@]}" --wait --timeout 1h --output-format json | tee "$RUNNER_TEMP/notary.json"
+            STATUS=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("status",""))' "$RUNNER_TEMP/notary.json")
+            ID=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("id",""))' "$RUNNER_TEMP/notary.json")
+            if [ "$STATUS" != "Accepted" ]; then
+              echo "::error::Notarization of $f: $STATUS"
+              [ -n "$ID" ] && xcrun notarytool log "$ID" "${AUTH[@]}"
+              exit 1
+            fi
+            [ -n "$ID" ] && xcrun notarytool log "$ID" "${AUTH[@]}" || true   # lists warnings, if any
+
+            # The ticket can take a moment to become available to stapler.
+            for attempt in 1 2 3 4 5; do
+              xcrun stapler staple "$f" && break
+              [ "$attempt" = 5 ] && { echo "::error::Stapling $f failed"; exit 1; }
+              echo "Stapling not possible yet, retrying in 30 s"; sleep 30
+            done
+            xcrun stapler validate "$f"
+          done
+          rm -f "$KEY"
+
+          echo "==> Gatekeeper check"
+          for f in dist/*.pkg; do spctl --assess --type install -vv "$f"; done
+          for f in dist/*.dmg; do spctl --assess --type open --context context:primary-signature -vv "$f"; done
+
+      - name: Remove the signing keychain
+        if: always() && env.FADERHOUSE_KEYCHAIN != ''
+        run: security delete-keychain "$FADERHOUSE_KEYCHAIN" || true
 
       - name: Upload installers
         uses: actions/upload-artifact@v7
